@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PolyStore.Api/PolyStore.Api.csproj" />
+    <Project Path="src/PolyStore.Application/PolyStore.Application.csproj" />
+    <Project Path="src/PolyStore.Domain/PolyStore.Domain.csproj" />
+    <Project Path="src/PolyStore.Infrastructure/PolyStore.Infrastructure.csproj" />
+  </Folder>
+</Solution>

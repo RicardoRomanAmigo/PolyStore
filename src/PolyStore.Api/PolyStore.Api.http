@@ -1,0 +1,6 @@
+@PolyStore.Api_HostAddress = http://localhost:5181
+
+GET {{PolyStore.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
