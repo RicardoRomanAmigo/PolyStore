@@ -18,6 +18,7 @@ public class Product
     public string? RenderUrl { get; private set; } // El render 3D original (opcional)
 
     // --- Inventario y Logica ---
+    public List<string> Tags {get; private set;} = new(); //Etiquetas para busqueda y filtrado
     public int Stock { get; private set; } 
     public ProductStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } 

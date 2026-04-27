@@ -1,9 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using PolyStore.Application.Abstractions.Persistence;
+using PolyStore.Application.Features.Products.CreateLiveProduct;
 using PolyStore.Infrastructure.Persistence.Context;
 using PolyStore.Infrastructure.Persistence.Repositories;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// --- SERVICIOS ---
+
+// Registro el handler para el caso de uso de nuevo producto live
+builder.Services.AddScoped<CreateLiveProductHandler>();
+
+// Registro de los Controladores
+builder.Services.AddControllers();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -18,13 +29,20 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// --- PIPELINE (Configuracion de la app) ---
+//Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    //Activo la interfaz visual de Scalar
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
+
+// Mapeo de las rutas de los controladores
+app.MapControllers();
 
 app.Run();
 

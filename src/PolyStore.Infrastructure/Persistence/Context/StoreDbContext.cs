@@ -25,6 +25,9 @@ public class StoreDbContext : DbContext
 
             entity.Property(p => p.Price)
                 .HasColumnType("numeric(18,2)");
+
+            entity.Property(p => p.Tags)
+                .HasColumnType("Text[]");
         });
     }
 }

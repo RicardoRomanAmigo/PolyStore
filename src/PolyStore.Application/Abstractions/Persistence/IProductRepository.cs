@@ -13,6 +13,8 @@ public interface IProductRepository
     // Obtener un producto por su ID (para la pagina de detalles de ambas webs)
     Task<Product?> GetProductByIdAsync(Guid id);
 
+    void Update(Product product);
+
     // Guardar un producto nuevo
     Task AddProductAsync(Product product);
 }
