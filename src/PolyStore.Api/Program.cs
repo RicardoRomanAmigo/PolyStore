@@ -27,6 +27,18 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
 //Registro el Repositorio (Asocio interfaz con Implementacion)
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
+// Registro del servicio CORS para para que el navegador permita la itneractuacion
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.AllowAnyOrigin() 
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
 // --- PIPELINE (Configuracion de la app) ---
@@ -40,6 +52,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS
+app.UseCors("AllowFrontend");
 
 // Mapeo de las rutas de los controladores
 app.MapControllers();
