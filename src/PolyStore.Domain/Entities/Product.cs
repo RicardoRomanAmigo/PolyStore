@@ -48,6 +48,13 @@ public class Product
         Price = price;
     }
 
+    public void UpdateMedia(string? mainImage, string? videoUrl, string? renderUrl)
+    {
+        MainImage = mainImage;
+        VideoUrl = videoUrl;
+        RenderUrl = renderUrl;
+    }
+
     public void SetStock(int stock)
     {
         if(stock < 0)
@@ -76,8 +83,30 @@ public class Product
         Status = ProductStatus.Archived;
     }
 
-    public void AdImage(string url)
+    public void AddImage(string url)
     {
+        if (string.IsNullOrWhiteSpace(url))
+        throw new ArgumentException("Image URL cannot be empty");
+        
         _gallery.Add(url);
+    }
+
+    public void ReplaceGallery(IEnumerable<string> urls)
+    {
+        _gallery.Clear();
+
+        foreach (var url in urls)
+        {
+            AddImage(url);
+        }
+    }
+
+    public void SetTags(IEnumerable<string> tags)
+    {
+        Tags = tags
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct()
+            .ToList();
     }
 }
