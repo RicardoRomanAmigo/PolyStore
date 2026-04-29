@@ -24,6 +24,13 @@ public class Product
     public DateTime CreatedAt { get; private set; } 
     public DateTime? PublishedAt { get; private set; }
 
+    // --- Propiedades de Estilo Dinamico ---
+    public string? PrimaryColor { get; private set; } // Ejemplo: "#0f172a"
+    public string? AccentColor { get; private set; } // Ejemplo: "#21a174"
+    public string? FontFamily { get; private set; }  // Ejemplo: "'Inter', sans-serif"
+    public string? BackgroundImageUrl { get; private set; } // Para fondo decorativo unico
+    public string? CustomCss { get; private set; } // Por si se mete algun estilo extra
+
     // --- Constructor ---
     public Product(string name, decimal price)
     {
@@ -35,6 +42,7 @@ public class Product
     }
 
     // --- Metodos de dominio ---
+    // - Update de los datos basicos -
     public void UpdateDetails(string name, string? description, decimal price)
     {
         if(string.IsNullOrWhiteSpace(name))
@@ -48,6 +56,7 @@ public class Product
         Price = price;
     }
 
+    // - Update de los datos de Media -
     public void UpdateMedia(string? mainImage, string? videoUrl, string? renderUrl)
     {
         MainImage = mainImage;
@@ -55,6 +64,7 @@ public class Product
         RenderUrl = renderUrl;
     }
 
+    // - Update del stock -
     public void SetStock(int stock)
     {
         if(stock < 0)
@@ -66,6 +76,7 @@ public class Product
             Status = ProductStatus.SoldOut; 
     }
 
+    // - Metodo de dominio para Status Live -
     public void Publish()
     {
         if(Status == ProductStatus.Live)
@@ -83,6 +94,7 @@ public class Product
         Status = ProductStatus.Archived;
     }
 
+    // - Update de imagen -
     public void AddImage(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -91,6 +103,7 @@ public class Product
         _gallery.Add(url);
     }
 
+    // - Update Reemplazar galeria -
     public void ReplaceGallery(IEnumerable<string> urls)
     {
         _gallery.Clear();
@@ -101,6 +114,7 @@ public class Product
         }
     }
 
+    // - Update de los Tags -
     public void SetTags(IEnumerable<string> tags)
     {
         Tags = tags
@@ -108,5 +122,20 @@ public class Product
             .Select(t => t.Trim())
             .Distinct()
             .ToList();
+    }
+
+    // - Update del estilo de pagina -
+    public void UpdateStyle(
+        string? primaryColor,
+        string? accentColor,
+        string? fontFamily,
+        string? backgroundImageUrl,
+        string? customCss)
+    {
+        PrimaryColor = primaryColor;
+        AccentColor = accentColor;
+        FontFamily = fontFamily;
+        BackgroundImageUrl = backgroundImageUrl;
+        CustomCss = customCss;
     }
 }
