@@ -4,8 +4,8 @@ using PolyStore.Application.Features.Products.CreateLiveProduct;
 using PolyStore.Infrastructure.Persistence.Context;
 using PolyStore.Infrastructure.Persistence.Repositories;
 using PolyStore.Application.Abstractions.Authentication;
-using Scalar.AspNetCore;
 using PolyStore.Infrastructure.Services;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
