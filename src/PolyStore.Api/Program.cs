@@ -3,7 +3,9 @@ using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Application.Features.Products.CreateLiveProduct;
 using PolyStore.Infrastructure.Persistence.Context;
 using PolyStore.Infrastructure.Persistence.Repositories;
+using PolyStore.Application.Abstractions.Authentication;
 using Scalar.AspNetCore;
+using PolyStore.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,9 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
 
 //Registro el Repositorio (Asocio interfaz con Implementacion)
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
+// Registro de authentication
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Registro del servicio CORS para para que el navegador permita la itneractuacion
 builder.Services.AddCors(options =>

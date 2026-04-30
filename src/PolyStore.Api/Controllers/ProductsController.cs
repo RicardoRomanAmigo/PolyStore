@@ -43,6 +43,24 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
+    // GET: api/products
+    // Este metodo se usa para obtener un producto por ID
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Product>> GetProductById(Guid id)
+    {
+        // 1. Llamamos al repoisorio para buscar por id
+        var product = await _repository.GetProductByIdAsync(id);
+
+        // 2. Si no existe devolvemos 404
+        if(product == null)
+        {
+            return NotFound(new {Message = "El producto no existe en el archivo. "});
+        }
+
+        // 3. Devolvemos al entidad Product
+        return Ok(product);
+    }
+
     // POST: api/products
     // Para cuando haga falta añadir nuevos productos
     [HttpPost]
