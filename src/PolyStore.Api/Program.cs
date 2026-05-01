@@ -32,6 +32,9 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 // Registro de authentication
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Registro de ServicioToken
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 // Registro del servicio CORS para para que el navegador permita la itneractuacion
 builder.Services.AddCors(options =>
 {
