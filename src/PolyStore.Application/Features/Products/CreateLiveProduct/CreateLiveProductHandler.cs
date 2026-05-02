@@ -29,5 +29,6 @@ public class CreateLiveProductHandler
 
         // 4. Guardarlo
         await _repository.AddProductAsync(newProduct);
+
     }
 }
