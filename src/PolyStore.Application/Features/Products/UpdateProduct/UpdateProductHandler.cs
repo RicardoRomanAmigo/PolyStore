@@ -47,5 +47,8 @@ public class UpdateProductHandler
         existingProduct.SetStock(
             product.Stock
         );
+
+        // 7. Persistencia 
+        await _repository.SaveChangesAsync();
     }
 }

@@ -6,6 +6,7 @@ using PolyStore.Infrastructure.Persistence.Repositories;
 using PolyStore.Application.Abstractions.Authentication;
 using PolyStore.Infrastructure.Services;
 using Scalar.AspNetCore;
+using PolyStore.Application.Features.Products.UpdateProduct;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Registro el handler para el caso de uso de nuevo producto live
 builder.Services.AddScoped<CreateLiveProductHandler>();
+
+// Registro el handler para el caso de uso de actualizar producto
+builder.Services.AddScoped<UpdateProductHandler>();
 
 // Registro de los Controladores
 builder.Services.AddControllers();

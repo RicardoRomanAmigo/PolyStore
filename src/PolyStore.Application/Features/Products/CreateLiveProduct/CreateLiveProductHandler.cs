@@ -30,5 +30,7 @@ public class CreateLiveProductHandler
         // 4. Guardarlo
         await _repository.AddProductAsync(newProduct);
 
+        // 5. Confirmacion de los cambios
+        await _repository.SaveChangesAsync();
     }
 }

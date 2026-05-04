@@ -50,6 +50,12 @@ public class ProductRepository : IProductRepository
         _context.Entry(product).State = EntityState.Modified;
     }
 
+    public async Task<bool> SaveChangesAsync()
+    {
+        //Devuleve true si se guardo al menos un cambio
+        return await _context.SaveChangesAsync() > 0;
+    }
+
     public void Delete(Product product)
     {
         _context.Products.Remove(product);

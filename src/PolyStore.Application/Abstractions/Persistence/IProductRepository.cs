@@ -18,4 +18,6 @@ public interface IProductRepository
     // Guardar un producto nuevo
     Task AddProductAsync(Product product);
 
+    // Boleano de Guardado en base de datos
+    Task<bool> SaveChangesAsync();
 }
