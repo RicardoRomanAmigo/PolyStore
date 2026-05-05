@@ -23,6 +23,7 @@ public class Product
     public ProductStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; } 
     public DateTime? PublishedAt { get; private set; }
+    public string? CreatedBy { get; private set; }
 
     // --- Propiedades de Estilo Dinamico ---
     public string? PrimaryColor { get; private set; } // Ejemplo: "#0f172a"
@@ -32,11 +33,18 @@ public class Product
     public string? CustomCss { get; private set; } // Por si se mete algun estilo extra
 
     // --- Constructor ---
-    public Product(string name, decimal price)
+    public Product(string name, decimal price, string createdBy)
     {
+        if(string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name cannot be empty");
+
+        if(price < 0)
+            throw new ArgumentException("Price cannot be negative");
+
         Id = Guid.NewGuid();
         Name = name;
         Price = price;
+        CreatedBy = createdBy; // Guardo la identidad del creador
         Status = ProductStatus.Draft;
         CreatedAt = DateTime.UtcNow;
     }

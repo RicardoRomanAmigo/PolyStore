@@ -43,6 +43,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Registro de ServicioToken
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+// Registro de herraminetas de chequeo de entrada
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext,UserContext>();
+
 // Registro del servicio CORS para para que el navegador permita la itneractuacion
 builder.Services.AddCors(options =>
 {

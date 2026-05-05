@@ -1,54 +1,61 @@
 using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Domain.Entities;
-
+using PolyStore.Application.Abstractions.Authentication; // 1. Importamos la abstraccion
 
 namespace PolyStore.Application.Features.Products.UpdateProduct;
 
 public class UpdateProductHandler
 {
     private readonly IProductRepository _repository;
+    private readonly IUserContext _userContext; // 2. Campo para la identidad
 
-    public UpdateProductHandler (IProductRepository repository)
+    public UpdateProductHandler (IProductRepository repository, IUserContext userContext )
     {
         _repository = repository;
+        _userContext = userContext; // Inyectamos el servicio
     }
 
-    public async Task ExecuteAsync(Product product, Guid id)
+    // 3. Cambiamos el parámetro a 'Request'
+    public async Task ExecuteAsync(Guid id, UpdateProductRequest request)
     {
-        // 1. Busco producto actual
+        // 4. Lógica de negocio: Archivamos el producto actual si existe
         var existingProduct = await _repository.GetProductByIdAsync(id);
 
-        // 2. Si el producto no exite
+        // 5. Si el producto no exite
         if(existingProduct is null)
             throw new Exception("Producto no encontrado");
 
+        // 6. Si el creador es otro
+        if (existingProduct.CreatedBy != _userContext.UserId)
+            throw new UnauthorizedAccessException("No tienes permiso para modificar este producto.");    
+
         existingProduct.UpdateDetails(
-            product.Name,
-            product.Description,
-            product.Price
+            request.Name,
+            request.Description,
+            request.Price
         );
 
-        // 3. Actualizar Media
+        // Actualizar Media
         existingProduct.UpdateMedia(
-            product.MainImage, product.VideoUrl, product.RenderUrl
+            request.MainImage, request.VideoUrl, request.RenderUrl
         );
 
-        // 4. Reemplazar Galeria
+        // Reemplazar Galeria
         existingProduct.ReplaceGallery(
-            product.Gallery
+            request.Gallery
         );
 
-        // 5. Setear Tags
+        // Setear Tags
         existingProduct.SetTags(
-            product.Tags
+            request.Tags
         );
 
-        // 6. Setear Stock
+        // Setear Stock
         existingProduct.SetStock(
-            product.Stock
+            request.Stock
         );
 
-        // 7. Persistencia 
+        // Persistencia 
         await _repository.SaveChangesAsync();
     }
 }
