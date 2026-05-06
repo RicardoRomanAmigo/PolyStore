@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using PolyStore.Domain.Entities;
-using PolyStore.Application.Abstractions.Persistence;
+// using PolyStore.Application.Abstractions.Persistence; -------------------------
 using PolyStore.Application.Features.Products.CreateLiveProduct;
 using PolyStore.Application.Features.Products.UpdateProduct;
+using PolyStore.Application.Features.Products.GetLiveProduct; // Añadimos los nuevos handlers
+using PolyStore.Application.Features.Products.GetArchivedProduct; // Nuevos handlers
+using PolyStore.Application.Features.Products.GetProductById; // Nuevos handlers
 
 namespace PolyStore.Api.Controllers;
 
@@ -10,16 +13,27 @@ namespace PolyStore.Api.Controllers;
 [Route("api/[controller]")] // La URL sera api/products
 public class ProductsController : ControllerBase
 {
-    private readonly IProductRepository _repository;
-    private readonly CreateLiveProductHandler _handler;
+    // private readonly IProductRepository _repository; Eliminamos el repositorio ------------------
+    private readonly CreateLiveProductHandler _createHandler;
     private readonly UpdateProductHandler _updateHandler;
+    private readonly GetLiveProductHandler _getLiveHandler; // Declaramos las variables ----------------
+    private readonly GetArchivedProductHandler _getArchivedHandler; // Declaramos las variables  -------------------
+    private readonly GetProductByIdHandler _getByIdHandler; // Declaramos las variables  -------------------
 
     // Inyectamos la interfaz del repositorio
-    public ProductsController(IProductRepository repository, CreateLiveProductHandler handler, UpdateProductHandler updateHandler)
+    // Solo los handlers necesarios ------------
+    public ProductsController(
+        CreateLiveProductHandler createHandler,
+        UpdateProductHandler updateHandler,
+        GetLiveProductHandler getLiveHandler,
+        GetArchivedProductHandler getArchivedHandler,
+        GetProductByIdHandler getByIdHandler)
     {
-        _repository = repository;
-        _handler = handler;
+        _createHandler = createHandler;
         _updateHandler = updateHandler;
+        _getLiveHandler = getLiveHandler;
+        _getArchivedHandler = getArchivedHandler;
+        _getByIdHandler = getByIdHandler;
     }
 
     // GET: api/products/live
@@ -27,7 +41,8 @@ public class ProductsController : ControllerBase
     [HttpGet("live")]
     public async Task<ActionResult<Product>> GetLiveProduct()
     {
-        var product = await _repository.GetLiveProductAsync();
+        // var product = await _repository.GetLiveProductAsync(); (Antes con el repositorio) ---------------------
+        var product = await _getLiveHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
 
         if(product == null) return NotFound("No hay ningun producto activo.");
 
@@ -39,7 +54,8 @@ public class ProductsController : ControllerBase
     [HttpGet("archived")]
     public async Task<ActionResult<IEnumerable<Product>>> GetArchivedProducts()
     {
-        var products = await _repository.GetArchivedProductsAsync();
+        // var products = await _repository.GetArchivedProductsAsync(); (Antes con el repositorio) ---------------------
+        var products = await _getArchivedHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
         return Ok(products);
     }
 
@@ -48,8 +64,8 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Product>> GetProductById(Guid id)
     {
-        // 1. Llamamos al repoisorio para buscar por id
-        var product = await _repository.GetProductByIdAsync(id);
+        //var product = await _repository.GetProductByIdAsync(id); (Antes con el repositorio) ---------------------
+        var product = await _getByIdHandler.ExecuteAsync(id); // Ahora delegamos al handler ------------------------
 
         // 2. Si no existe devolvemos 404
         if(product == null)
@@ -64,29 +80,35 @@ public class ProductsController : ControllerBase
     // POST: api/products
     // Para cuando haga falta añadir nuevos productos
     [HttpPost]
-    public async Task<ActionResult> CreateProduct(Product product)
+    public async Task<ActionResult> CreateProduct(CreateLiveProductRequest request) // modificamos el parametro -----------
     {
-        await _handler.ExecuteAsync(product);
+        //await _createHandler.ExecuteAsync(product); (amtes)
 
-        return Ok(product); // temporal
+        // El ID se generará solo DENTRO del Handler cuando haga 'new Product(...)'
+        var newId = await _createHandler.ExecuteAsync(request); 
+
+        return Ok(new { Id = newId, Message = "Producto creado y puesto en Live" }); 
     }
 
     // PUT: api/products
     // Para modificar un producto
     [HttpPut("{id}")]
-    public async Task<ActionResult<Product>> UpdateProduct(Guid id, Product product)
+    public async Task<ActionResult<Product>> UpdateProduct(Guid id, UpdateProductRequest request) //---------------
     {
-        // 1. Validacion de seguridad: que el ID de la URL coincida con el del objeto
-        if(id != product.Id)
-        {
-            return BadRequest("El ID del producto no coincide con el de la URL");
-        }
+        // 1. Seguimos validando que el ID de la URL sea el mismo que el del cuerpo (opcional pero recomendado)
+        // Nota: El Request debería tener también el Id o lo tomamos directamente de la URL.
 
         try
         {
-            // 2. Llamamos al handler para filtrar
-            await _updateHandler.ExecuteAsync(product, id);
+            // 2. Ahora pasamos el 'request' (DTO), no la entidad 'product'
+            await _updateHandler.ExecuteAsync(id, request);
+
             return NoContent(); // 204 : Todo ha ido bien, peo no hay nada que devolver
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 3. Importante: Si el Handler lanza esta excepción por el IUserContext
+            return Forbid(); // 403: No tienes permiso para editar este producto
         }
         catch (Exception ex) when (ex.Message == "Producto no encontrado")
         {

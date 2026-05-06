@@ -18,6 +18,12 @@ public class CreateLiveProductHandler
     // 3. Cambiamos el parámetro a 'Request'
     public async Task<Guid> ExecuteAsync(CreateLiveProductRequest request)
     {
+        // Validamos que tenemos un usuario antes de hacer nada -----------------------
+        if (string.IsNullOrEmpty(_userContext.UserId))
+        {
+            throw new UnauthorizedAccessException("No se pudo identificar al usuario.");
+        }
+
         // 5. Lógica de negocio: Archivamos el producto actual si existe
         var currentLive = await _repository.GetLiveProductAsync();
 
@@ -30,6 +36,7 @@ public class CreateLiveProductHandler
 
         // 6. CREACIÓN SEGURA: Fabricamos el producto dentro del Handler.
         // El 'UserId' lo sacamos de _userContext, NO del request del usuario.
+        // Ahora el compilador sabe que UserId no es nulo -----------------------
         var newProduct = new Product(
             request.Name,
             request.Price,
