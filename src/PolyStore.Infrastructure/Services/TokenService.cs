@@ -24,7 +24,11 @@ public class TokenService : ITokenService
         // 1. Definimos los "Claims" ( La info que viaja dentro del Token)
         var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.NameId, user.UserName),
+            // CAMBIO AQUÍ: Usamos user.Id y lo convertimos a string
+            new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+            //  OPCIONAL: Podemos añadir el UserName en otro claim si lo necesito luego
+            new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+            
             new Claim(ClaimTypes.Role, user.Role),
             new Claim(JwtRegisteredClaimNames.Email, user.Email)
         };

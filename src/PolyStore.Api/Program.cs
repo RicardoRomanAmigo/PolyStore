@@ -8,6 +8,9 @@ using PolyStore.Infrastructure.Services;
 using Scalar.AspNetCore;
 using PolyStore.Application.Features.Products.UpdateProduct;
 using PolyStore.Api.Extensions;
+using PolyStore.Application.Features.Products.GetLiveProduct;
+using PolyStore.Application.Features.Products.GetArchivedProduct;
+using PolyStore.Application.Features.Products.GetProductById;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +25,15 @@ builder.Services.AddScoped<CreateLiveProductHandler>();
 
 // Registro el handler para el caso de uso de actualizar producto
 builder.Services.AddScoped<UpdateProductHandler>();
+
+// Registro el handler para obtener el producto live
+builder.Services.AddScoped<GetLiveProductHandler>();
+
+// Registro el hendler para obtener los productos archived
+builder.Services.AddScoped<GetArchivedProductHandler>();
+
+// Registro el hendler para obtener el producto por id
+builder.Services.AddScoped<GetProductByIdHandler>();
 
 // Registro de los Controladores
 builder.Services.AddControllers();
@@ -46,6 +58,10 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Registro de herraminetas de chequeo de entrada
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContext,UserContext>();
+
+// 2. Configurar JWT (Si usas Identity o JWT Bearer)
+//builder.Services.AddAuthentication().AddJwtBearer(); // Configura aquí tus Keys/Issuer
+//builder.Services.AddAuthorization();
 
 // Registro del servicio CORS para para que el navegador permita la itneractuacion
 builder.Services.AddCors(options =>
