@@ -18,6 +18,13 @@ public class UpdateProductHandler
     // 3. Cambiamos el parámetro a 'Request'
     public async Task ExecuteAsync(Guid id, UpdateProductRequest request)
     {
+        // 1. PRIMER CANDADO: ¿Es un Admin?
+        // Si no es Admin, ni siquiera miramos si el producto es suyo o no.
+        if (_userContext.Role != "Admin")
+        {
+            throw new UnauthorizedAccessException("Solo los administradores pueden modificar productos. ");
+        }
+
         // 4. Lógica de negocio: Archivamos el producto actual si existe
         var existingProduct = await _repository.GetProductByIdAsync(id);
 

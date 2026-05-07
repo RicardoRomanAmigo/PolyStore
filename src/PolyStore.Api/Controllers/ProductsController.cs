@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using PolyStore.Domain.Entities;
-// using PolyStore.Application.Abstractions.Persistence; -------------------------
 using PolyStore.Application.Features.Products.CreateLiveProduct;
 using PolyStore.Application.Features.Products.UpdateProduct;
 using PolyStore.Application.Features.Products.GetLiveProduct; // Añadimos los nuevos handlers
 using PolyStore.Application.Features.Products.GetArchivedProduct; // Nuevos handlers
-using PolyStore.Application.Features.Products.GetProductById; // Nuevos handlers
+using PolyStore.Application.Features.Products.GetProductById;
+using Microsoft.AspNetCore.Authorization; // Nuevos handlers
 
 namespace PolyStore.Api.Controllers;
 
@@ -41,7 +41,6 @@ public class ProductsController : ControllerBase
     [HttpGet("live")]
     public async Task<ActionResult<Product>> GetLiveProduct()
     {
-        // var product = await _repository.GetLiveProductAsync(); (Antes con el repositorio) ---------------------
         var product = await _getLiveHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
 
         if(product == null) return NotFound("No hay ningun producto activo.");
@@ -54,7 +53,6 @@ public class ProductsController : ControllerBase
     [HttpGet("archived")]
     public async Task<ActionResult<IEnumerable<Product>>> GetArchivedProducts()
     {
-        // var products = await _repository.GetArchivedProductsAsync(); (Antes con el repositorio) ---------------------
         var products = await _getArchivedHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
         return Ok(products);
     }
@@ -64,7 +62,6 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Product>> GetProductById(Guid id)
     {
-        //var product = await _repository.GetProductByIdAsync(id); (Antes con el repositorio) ---------------------
         var product = await _getByIdHandler.ExecuteAsync(id); // Ahora delegamos al handler ------------------------
 
         // 2. Si no existe devolvemos 404
@@ -77,9 +74,14 @@ public class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    // ---------------------------------------------------------
+    // ZONA DE ESCRITURA: Solo Administradores
+    // ---------------------------------------------------------
+
     // POST: api/products
     // Para cuando haga falta añadir nuevos productos
     [HttpPost]
+    [Authorize(Roles = "Admin")] // <-- El Portero para creación
     public async Task<ActionResult> CreateProduct(CreateLiveProductRequest request) // modificamos el parametro -----------
     {
         //await _createHandler.ExecuteAsync(product); (amtes)
@@ -93,11 +95,11 @@ public class ProductsController : ControllerBase
     // PUT: api/products
     // Para modificar un producto
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")] // <-- El Portero para actualización
     public async Task<ActionResult<Product>> UpdateProduct(Guid id, UpdateProductRequest request) //---------------
     {
         // 1. Seguimos validando que el ID de la URL sea el mismo que el del cuerpo (opcional pero recomendado)
         // Nota: El Request debería tener también el Id o lo tomamos directamente de la URL.
-
         try
         {
             // 2. Ahora pasamos el 'request' (DTO), no la entidad 'product'
@@ -107,7 +109,8 @@ public class ProductsController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            // 3. Importante: Si el Handler lanza esta excepción por el IUserContext
+            // Este catch es vital: captura si el Handler decide que, 
+            // aunque seas Admin, NO eres el dueño del producto.
             return Forbid(); // 403: No tienes permiso para editar este producto
         }
         catch (Exception ex) when (ex.Message == "Producto no encontrado")

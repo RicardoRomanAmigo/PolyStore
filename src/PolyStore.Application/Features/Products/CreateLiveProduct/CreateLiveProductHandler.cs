@@ -18,10 +18,11 @@ public class CreateLiveProductHandler
     // 3. Cambiamos el parámetro a 'Request'
     public async Task<Guid> ExecuteAsync(CreateLiveProductRequest request)
     {
-        // Validamos que tenemos un usuario antes de hacer nada -----------------------
-        if (string.IsNullOrEmpty(_userContext.UserId))
+        // 1. VALIDACIÓN DE IDENTIDAD Y ROL (Seguridad de Negocio)
+        // No solo nos importa que esté autenticado, nos importa QUIÉN es.
+        if (!_userContext.IsAuthenticated || _userContext.Role !="Admin")
         {
-            throw new UnauthorizedAccessException("No se pudo identificar al usuario.");
+            throw new UnauthorizedAccessException("Acceso denegado: Se requieren privilegios de administrador para realizar esta acción.");
         }
 
         // 5. Lógica de negocio: Archivamos el producto actual si existe
@@ -40,7 +41,7 @@ public class CreateLiveProductHandler
         var newProduct = new Product(
             request.Name,
             request.Price,
-            _userContext.UserId
+            _userContext.UserId!
         );
 
         // Si viene descripción, la actualizamos mediante su método de dominio
