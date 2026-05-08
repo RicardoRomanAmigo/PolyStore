@@ -62,6 +62,15 @@ public class UpdateProductHandler
             request.Stock
         );
 
+        // Los estilos
+        existingProduct.UpdateStyle(
+            request.PrimaryColor,
+            request.AccentColor,
+            request.FontFamily,
+            request.BackgroundImageUrl,
+            request.CustomCss
+        );
+        
         // Persistencia 
         await _repository.SaveChangesAsync();
     }
