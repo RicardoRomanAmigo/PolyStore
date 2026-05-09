@@ -2,6 +2,7 @@ using Scalar.AspNetCore;
 using PolyStore.Api.Extensions;
 using PolyStore.Infrastructure;
 using PolyStore.Application;
+using PolyStore.Api.MiddleWares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // --- PIPELINE (Configuracion de la app) ---
+// 1. Debe ser lo primero (o de lo primero) que registres.
+// ¿Por qué? Porque solo puede atrapar errores de las piezas que vienen DESPUÉS de él.
+app.UseMiddleware<ExceptionMiddleware>();
+
 //Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

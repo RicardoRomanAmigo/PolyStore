@@ -41,6 +41,9 @@ public class ProductsController : ControllerBase
     [HttpGet("live")]
     public async Task<ActionResult<Product>> GetLiveProduct()
     {
+        // ESTA ES LA BOMBA DE PRUEBA:
+        throw new Exception("¡Prueba técnica! El middleware debería atrapar este error.");
+
         var product = await _getLiveHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
 
         if(product == null) return NotFound("No hay ningun producto activo.");
