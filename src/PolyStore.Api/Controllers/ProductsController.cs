@@ -41,9 +41,6 @@ public class ProductsController : ControllerBase
     [HttpGet("live")]
     public async Task<ActionResult<Product>> GetLiveProduct()
     {
-        // ESTA ES LA BOMBA DE PRUEBA:
-        throw new Exception("¡Prueba técnica! El middleware debería atrapar este error.");
-
         var product = await _getLiveHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
 
         if(product == null) return NotFound("No hay ningun producto activo.");
@@ -99,26 +96,9 @@ public class ProductsController : ControllerBase
     // Para modificar un producto
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")] // <-- El Portero para actualización
-    public async Task<ActionResult<Product>> UpdateProduct(Guid id, UpdateProductRequest request) //---------------
+    public async Task<ActionResult<Product>> UpdateProduct(Guid id, UpdateProductRequest request) 
     {
-        // 1. Seguimos validando que el ID de la URL sea el mismo que el del cuerpo (opcional pero recomendado)
-        // Nota: El Request debería tener también el Id o lo tomamos directamente de la URL.
-        try
-        {
-            // 2. Ahora pasamos el 'request' (DTO), no la entidad 'product'
             await _updateHandler.ExecuteAsync(id, request);
-
             return NoContent(); // 204 : Todo ha ido bien, peo no hay nada que devolver
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Este catch es vital: captura si el Handler decide que, 
-            // aunque seas Admin, NO eres el dueño del producto.
-            return Forbid(); // 403: No tienes permiso para editar este producto
-        }
-        catch (Exception ex) when (ex.Message == "Producto no encontrado")
-        {
-                return NotFound($"No se encontro el producto con ID: {id}");   
-        }
     }
 }

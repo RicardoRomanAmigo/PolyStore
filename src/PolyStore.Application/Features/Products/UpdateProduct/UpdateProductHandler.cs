@@ -1,75 +1,56 @@
 using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Domain.Entities;
-using PolyStore.Application.Abstractions.Authentication; // 1. Importamos la abstraccion
+using PolyStore.Application.Abstractions.Authentication; 
+using PolyStore.Domain.Exceptions; // <--- 1. Importamos nuestras excepciones
 
 namespace PolyStore.Application.Features.Products.UpdateProduct;
 
 public class UpdateProductHandler
 {
     private readonly IProductRepository _repository;
-    private readonly IUserContext _userContext; // 2. Campo para la identidad
+    private readonly IUserContext _userContext; 
 
     public UpdateProductHandler (IProductRepository repository, IUserContext userContext )
     {
         _repository = repository;
-        _userContext = userContext; // Inyectamos el servicio
+        _userContext = userContext;
     }
 
     // 3. Cambiamos el parámetro a 'Request'
     public async Task ExecuteAsync(Guid id, UpdateProductRequest request)
     {
-        // 1. PRIMER CANDADO: ¿Es un Admin?
-        // Si no es Admin, ni siquiera miramos si el producto es suyo o no.
+        // PRIMER CANDADO: ¿Es un Admin?
         if (_userContext.Role != "Admin")
         {
-            throw new UnauthorizedAccessException("Solo los administradores pueden modificar productos. ");
+            // Usamos Forbidden porque el usuario está autenticado pero no tiene el rol
+            throw new ForbiddenException("Solo los administradores pueden modificar productos. ");
         }
 
-        // 4. Lógica de negocio: Archivamos el producto actual si existe
         var existingProduct = await _repository.GetProductByIdAsync(id);
 
-        // 5. Si el producto no exite
+        // Si el producto no exite
         if(existingProduct is null)
-            throw new Exception("Producto no encontrado");
-
-        // 6. Si el creador es otro
+        {
+            // Ya no lanzamos una Exception genérica, lanzamos nuestro caso de dominio
+            throw new NotFoundException($"No se encontró el producto con ID: {id}");
+        }
+            
+        // Si el creador es otro (Seguridad por propiedad)
         if (existingProduct.CreatedBy != _userContext.UserId)
-            throw new UnauthorizedAccessException("No tienes permiso para modificar este producto.");    
+            throw new ForbiddenException("No tienes permiso para modificar este producto.");    
 
-        existingProduct.UpdateDetails(
-            request.Name,
-            request.Description,
-            request.Price
-        );
-
+        // --- Lógica de actualización (Sin cambios) ---
+        existingProduct.UpdateDetails(request.Name,request.Description,request.Price);
         // Actualizar Media
-        existingProduct.UpdateMedia(
-            request.MainImage, request.VideoUrl, request.RenderUrl
-        );
-
+        existingProduct.UpdateMedia(request.MainImage, request.VideoUrl, request.RenderUrl);
         // Reemplazar Galeria
-        existingProduct.ReplaceGallery(
-            request.Gallery
-        );
-
+        existingProduct.ReplaceGallery( request.Gallery);
         // Setear Tags
-        existingProduct.SetTags(
-            request.Tags
-        );
-
+        existingProduct.SetTags(request.Tags);
         // Setear Stock
-        existingProduct.SetStock(
-            request.Stock
-        );
-
+        existingProduct.SetStock(request.Stock);
         // Los estilos
-        existingProduct.UpdateStyle(
-            request.PrimaryColor,
-            request.AccentColor,
-            request.FontFamily,
-            request.BackgroundImageUrl,
-            request.CustomCss
-        );
+        existingProduct.UpdateStyle(request.PrimaryColor,request.AccentColor,request.FontFamily,request.BackgroundImageUrl,request.CustomCss);
         
         // Persistencia 
         await _repository.SaveChangesAsync();
