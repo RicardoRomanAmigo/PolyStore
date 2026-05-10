@@ -3,6 +3,7 @@ using PolyStore.Api.Extensions;
 using PolyStore.Infrastructure;
 using PolyStore.Application;
 using PolyStore.Api.MiddleWares;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 

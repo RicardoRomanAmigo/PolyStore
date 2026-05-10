@@ -10,19 +10,21 @@ public class CreateLiveProductHandler
 {
     private readonly IProductRepository _repository;
     private readonly IUserContext _userContext; 
+    private readonly IValidator<CreateLiveProductRequest> _validator; // 1. Campo privado
 
-    public CreateLiveProductHandler(IProductRepository repository, IUserContext userContext )
+    public CreateLiveProductHandler(IProductRepository repository, IUserContext userContext, IValidator<CreateLiveProductRequest> valiator ) // 2. Se inyecta aquí automáticamente
     {
         _repository = repository;
         _userContext = userContext; 
+        _validator = valiator;
     }
 
     public async Task<Guid> ExecuteAsync(CreateLiveProductRequest request)
     {
-        // --- 1. VALIDACIÓN DE DATOS (FluentValidation) ---
+        // --- VALIDACIÓN DE DATOS (FluentValidation) ---
         // Lo hacemos lo primero de todo para no trabajar en balde si los datos están mal
-        var validator = new CreateLiveProductValidator();
-        var validationResult = await validator.ValidateAsync(request);
+        // 3. VALIDACIÓN USANDO EL CAMPO INYECTADO en el constructor
+        var validationResult = await _validator.ValidateAsync(request);
 
         if (!validationResult.IsValid)
         {
@@ -43,7 +45,7 @@ public class CreateLiveProductHandler
             throw new UnauthorizedAccessException("Acceso denegado: Se requieren privilegios de administrador para realizar esta acción.");
         }
 
-        // 2. Lógica de negocio: Archivamos el producto actual (Single Live Product Pattern)
+        // Lógica de negocio: Archivamos el producto actual (Single Live Product Pattern)
         var currentLive = await _repository.GetLiveProductAsync();
         if(currentLive is not null)
         {
@@ -51,7 +53,7 @@ public class CreateLiveProductHandler
             _repository.Update(currentLive);
         }
 
-        // 3. CREACIÓN SEGURA: Fabricamos el producto dentro del Handler.
+        // CREACIÓN SEGURA: Fabricamos el producto dentro del Handler.
         // El 'UserId' lo sacamos de _userContext, NO del request del usuario.
         // Ahora el compilador sabe que UserId no es nulo -----------------------
         var newProduct = new Product(
@@ -60,7 +62,7 @@ public class CreateLiveProductHandler
             _userContext.UserId!
         );
 
-        // 4. MAPEADO DE DATOS EXTRA (Aquí es donde ensanchamos la lógica)
+        // MAPEADO DE DATOS EXTRA (Aquí es donde ensanchamos la lógica)
         // Usamos los métodos de dominio que ya tienes en la Entidad
         newProduct.UpdateDetails(request.Name, request.Description, request.Price);
         newProduct.UpdateMedia(request.MainImage, request.VideoUrl, request.RenderUrl);
@@ -78,7 +80,7 @@ public class CreateLiveProductHandler
             request.CustomCss
        );
 
-        // 5. Publicar y Guardar
+        // Publicar y Guardar
         newProduct.Publish();
 
         // Guardarlo

@@ -4,6 +4,8 @@ using PolyStore.Application.Features.Products.UpdateProduct;
 using PolyStore.Application.Features.Products.GetLiveProduct;
 using PolyStore.Application.Features.Products.GetArchivedProduct;
 using PolyStore.Application.Features.Products.GetProductById;
+using FluentValidation;
+using System.Reflection;
 
 namespace PolyStore.Application;
 
@@ -16,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<GetLiveProductHandler>();
         services.AddScoped<GetArchivedProductHandler>();
         services.AddScoped<GetProductByIdHandler>();
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); //<---
 
         return services;
     }
