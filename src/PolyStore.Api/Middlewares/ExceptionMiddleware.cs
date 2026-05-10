@@ -40,6 +40,13 @@ public class ExceptionMiddleware
         var statusCode = HttpStatusCode.InternalServerError;
         var title = "Error interno en la API";
 
+        //1. Definimos las reglas de estilo (CamelCase)
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true // Opcional: hace que el JSON se vea "bonito" con espacios
+        };
+
         // Aquí "cazamos" los tipos específicos
         switch (exception)
         {
@@ -57,6 +64,27 @@ public class ExceptionMiddleware
                 statusCode = HttpStatusCode.Unauthorized;
                 title = "No autorizado";
                 break;
+
+            case ValidationException validationEx: // Aquí 'validationEx' ya tiene el diccionario de errores
+                statusCode = HttpStatusCode.BadRequest;
+                title = "Error de validación";
+        
+                // Creamos la respuesta especial con el diccionario de errores
+                var validationResponse = new ProblemDetails
+                {
+                    Status = (int)statusCode,
+                    Title = title,
+                    Detail = validationEx.Message,
+                    Instance = context.Request.Path
+                };
+
+                // Añadimos el diccionario de errores a la respuesta
+                // 'Extensions' es un diccionario que trae ProblemDetails para datos extra
+                validationResponse.Extensions.Add("errors", validationEx.Errors);
+
+                context.Response.StatusCode = (int)statusCode;
+                var jsonValidation = JsonSerializer.Serialize(validationResponse, options);
+                return context.Response.WriteAsync(jsonValidation);
         }
 
         context.Response.StatusCode = (int)statusCode;
@@ -66,13 +94,6 @@ public class ExceptionMiddleware
             Status = context.Response.StatusCode,
             Title = title,
             Detail = exception.Message
-        };
-
-        //1. Definimos las reglas de estilo (CamelCase)
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true // Opcional: hace que el JSON se vea "bonito" con espacios
         };
 
         // 2. Serializamos el objeto 'response' aplicando las 'options'

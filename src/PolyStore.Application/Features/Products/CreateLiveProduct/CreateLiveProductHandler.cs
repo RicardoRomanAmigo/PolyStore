@@ -1,24 +1,42 @@
 using PolyStore.Domain.Entities;
 using PolyStore.Application.Abstractions.Persistence;
-using PolyStore.Application.Abstractions.Authentication; // 1. Importamos la abstaccion
+using PolyStore.Application.Abstractions.Authentication; 
+using PolyStore.Domain.Exceptions; // <--- Nuestras excepciones
+using FluentValidation;           // <--- FluentValidation
 
 namespace PolyStore.Application.Features.Products.CreateLiveProduct;
 
 public class CreateLiveProductHandler
 {
     private readonly IProductRepository _repository;
-    private readonly IUserContext _userContext; // 2. Campo para la identidad
+    private readonly IUserContext _userContext; 
 
     public CreateLiveProductHandler(IProductRepository repository, IUserContext userContext )
     {
         _repository = repository;
-        _userContext = userContext; // Inyectamos el servicio
+        _userContext = userContext; 
     }
 
-    // 3. Cambiamos el parámetro a 'Request'
     public async Task<Guid> ExecuteAsync(CreateLiveProductRequest request)
     {
-        // 1. VALIDACIÓN DE IDENTIDAD Y ROL (Seguridad de Negocio)
+        // --- 1. VALIDACIÓN DE DATOS (FluentValidation) ---
+        // Lo hacemos lo primero de todo para no trabajar en balde si los datos están mal
+        var validator = new CreateLiveProductValidator();
+        var validationResult = await validator.ValidateAsync(request);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key, 
+                    g => g.Select(x => x.ErrorMessage).ToArray()
+                );
+
+            throw new PolyStore.Domain.Exceptions.ValidationException(errors); // El Middleware atrapa esto y envía 400
+        }
+
+        // VALIDACIÓN DE IDENTIDAD Y ROL (Seguridad de Negocio)
         // No solo nos importa que esté autenticado, nos importa QUIÉN es.
         if (!_userContext.IsAuthenticated || _userContext.Role !="Admin")
         {

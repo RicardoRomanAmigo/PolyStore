@@ -41,9 +41,12 @@ public class ProductsController : ControllerBase
     [HttpGet("live")]
     public async Task<ActionResult<Product>> GetLiveProduct()
     {
-        var product = await _getLiveHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
+        // 1. Llamamos al handler.
+        // 2. Si no hay producto, el handler lanza la excepción.
+        // 3. El Middleware la atrapa y devuelve el 404.
+        // 4. El controlador ni se entera del drama.
 
-        if(product == null) return NotFound("No hay ningun producto activo.");
+        var product = await _getLiveHandler.ExecuteAsync(); 
 
         return Ok(product);
     }
@@ -53,8 +56,9 @@ public class ProductsController : ControllerBase
     [HttpGet("archived")]
     public async Task<ActionResult<IEnumerable<Product>>> GetArchivedProducts()
     {
-        var products = await _getArchivedHandler.ExecuteAsync(); // Ahora delegamos al handler ------------------------
-        return Ok(products);
+        // No hay try-catch, no hay chequeo de nulos.
+        // Si la lista está vacía, el cliente recibe [], que es lo correcto.
+        return Ok(await _getArchivedHandler.ExecuteAsync());
     }
 
     // GET: api/products
@@ -62,16 +66,9 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Product>> GetProductById(Guid id)
     {
-        var product = await _getByIdHandler.ExecuteAsync(id); // Ahora delegamos al handler ------------------------
-
-        // 2. Si no existe devolvemos 404
-        if(product == null)
-        {
-            return NotFound(new {Message = "El producto no existe en el archivo. "});
-        }
-
-        // 3. Devolvemos al entidad Product
-        return Ok(product);
+        // Una sola línea. 
+        // Toda la lógica de "si no existe" ya está en el Handler y el Middleware.
+        return Ok(await _getByIdHandler.ExecuteAsync(id));
     }
 
     // ---------------------------------------------------------

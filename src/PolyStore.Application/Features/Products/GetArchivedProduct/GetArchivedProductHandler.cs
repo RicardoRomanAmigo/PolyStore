@@ -1,6 +1,7 @@
 using PolyStore.Domain.Entities;
 using PolyStore.Application.Abstractions.Persistence;
 
+
 namespace PolyStore.Application.Features.Products.GetArchivedProduct;
 
 public class GetArchivedProductHandler
@@ -14,7 +15,10 @@ public class GetArchivedProductHandler
 
     public async Task<IEnumerable<Product>> ExecuteAsync()
     {
-        //Centralizamos la obtencion del catalogo
-        return await _repository.GetArchivedProductsAsync();
+        var products = await _repository.GetArchivedProductsAsync();
+        
+        // Si por alguna razón el repositorio devolviera null, 
+        // devolvemos una lista vacía para no romper el Frontend.
+        return products ?? Enumerable.Empty<Product>();
     }
 }
