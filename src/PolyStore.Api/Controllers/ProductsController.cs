@@ -5,7 +5,8 @@ using PolyStore.Application.Features.Products.UpdateProduct;
 using PolyStore.Application.Features.Products.GetLiveProduct; // Añadimos los nuevos handlers
 using PolyStore.Application.Features.Products.GetArchivedProduct; // Nuevos handlers
 using PolyStore.Application.Features.Products.GetProductById;
-using Microsoft.AspNetCore.Authorization; // Nuevos handlers
+using Microsoft.AspNetCore.Authorization;
+using PolyStore.Application.Features.Products.DeleteProduct; // Nuevos handlers
 
 namespace PolyStore.Api.Controllers;
 
@@ -19,6 +20,7 @@ public class ProductsController : ControllerBase
     private readonly GetLiveProductHandler _getLiveHandler; // Declaramos las variables ----------------
     private readonly GetArchivedProductHandler _getArchivedHandler; // Declaramos las variables  -------------------
     private readonly GetProductByIdHandler _getByIdHandler; // Declaramos las variables  -------------------
+    private readonly DeleteProductHandler _deleteHandler;
 
     // Inyectamos la interfaz del repositorio
     // Solo los handlers necesarios ------------
@@ -27,13 +29,15 @@ public class ProductsController : ControllerBase
         UpdateProductHandler updateHandler,
         GetLiveProductHandler getLiveHandler,
         GetArchivedProductHandler getArchivedHandler,
-        GetProductByIdHandler getByIdHandler)
+        GetProductByIdHandler getByIdHandler,
+        DeleteProductHandler deleteHandler)
     {
         _createHandler = createHandler;
         _updateHandler = updateHandler;
         _getLiveHandler = getLiveHandler;
         _getArchivedHandler = getArchivedHandler;
         _getByIdHandler = getByIdHandler;
+        _deleteHandler = deleteHandler;
     }
 
     // GET: api/products/live
@@ -97,5 +101,18 @@ public class ProductsController : ControllerBase
     {
             await _updateHandler.ExecuteAsync(id, request);
             return NoContent(); // 204 : Todo ha ido bien, peo no hay nada que devolver
+    }
+
+    // DELETE: api/products
+    // Para cuando haga falta eliminar un producto
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<Product>> DeleteProduct(Guid id)
+    {
+        var request = new DeleteProductRequest(id);
+
+        await _deleteHandler.ExecuteAsync(request);
+        
+        return NoContent(); 
     }
 }

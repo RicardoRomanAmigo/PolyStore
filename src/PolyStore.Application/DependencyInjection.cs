@@ -6,6 +6,7 @@ using PolyStore.Application.Features.Products.GetArchivedProduct;
 using PolyStore.Application.Features.Products.GetProductById;
 using FluentValidation;
 using System.Reflection;
+using PolyStore.Application.Features.Products.DeleteProduct;
 
 namespace PolyStore.Application;
 
@@ -18,7 +19,8 @@ public static class DependencyInjection
         services.AddScoped<GetLiveProductHandler>();
         services.AddScoped<GetArchivedProductHandler>();
         services.AddScoped<GetProductByIdHandler>();
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); //<---
+        services.AddScoped<DeleteProductHandler>(); //<---
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); 
 
         return services;
     }

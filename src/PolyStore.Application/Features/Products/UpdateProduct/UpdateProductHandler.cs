@@ -1,7 +1,9 @@
 using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Domain.Entities;
 using PolyStore.Application.Abstractions.Authentication; 
-using PolyStore.Domain.Exceptions; // <--- 1. Importamos nuestras excepciones
+using PolyStore.Domain.Exceptions; 
+using FluentValidation; // <--- FluentValidation
+using DomainExceptions = PolyStore.Domain.Exceptions; // Alias de seguridad para usarlo
 
 namespace PolyStore.Application.Features.Products.UpdateProduct;
 
@@ -9,16 +11,33 @@ public class UpdateProductHandler
 {
     private readonly IProductRepository _repository;
     private readonly IUserContext _userContext; 
+    private readonly IValidator<UpdateProductRequest> _validator; // 1. Campo para el validador
 
-    public UpdateProductHandler (IProductRepository repository, IUserContext userContext )
+    public UpdateProductHandler (IProductRepository repository, IUserContext userContext, IValidator<UpdateProductRequest> validator ) // 2. Se inyecta aquí automáticamente
     {
         _repository = repository;
         _userContext = userContext;
+        _validator = validator;
     }
 
     // 3. Cambiamos el parámetro a 'Request'
     public async Task ExecuteAsync(Guid id, UpdateProductRequest request)
     {
+        // --- 3. VALIDACION DE DATOS --------------------------------------------
+        var validationResult = await _validator.ValidateAsync(request);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.ErrorMessage).ToArray()
+                );
+            throw new DomainExceptions.ValidationException(errors);
+        }
+        // -----------------------------------------------------------------------
+
         // PRIMER CANDADO: ¿Es un Admin?
         if (_userContext.Role != "Admin")
         {
