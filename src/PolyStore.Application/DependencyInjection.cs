@@ -8,6 +8,7 @@ using FluentValidation;
 using System.Reflection;
 using PolyStore.Application.Features.Products.DeleteProduct;
 using PolyStore.Application.Features.Authentication.Register;
+using PolyStore.Application.Features.Authentication.Login;
 
 namespace PolyStore.Application;
 
@@ -22,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<GetProductByIdHandler>();
         services.AddScoped<DeleteProductHandler>(); 
         services.AddScoped<RegisterHandler>();
+        services.AddScoped<LoginHandler>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); 
 
         return services;
