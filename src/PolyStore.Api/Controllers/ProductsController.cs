@@ -6,7 +6,8 @@ using PolyStore.Application.Features.Products.GetLiveProduct; // Añadimos los n
 using PolyStore.Application.Features.Products.GetArchivedProduct; // Nuevos handlers
 using PolyStore.Application.Features.Products.GetProductById;
 using Microsoft.AspNetCore.Authorization;
-using PolyStore.Application.Features.Products.DeleteProduct; // Nuevos handlers
+using PolyStore.Application.Features.Products.DeleteProduct;
+using PolyStore.Application.Features.Products.GetAllProducts; // Nuevos handlers
 
 namespace PolyStore.Api.Controllers;
 
@@ -14,22 +15,24 @@ namespace PolyStore.Api.Controllers;
 [Route("api/[controller]")] // La URL sera api/products
 public class ProductsController : ControllerBase
 {
-    // private readonly IProductRepository _repository; Eliminamos el repositorio ------------------
+    // private readonly IProductRepository _repository; Eliminamos el repositorio 
     private readonly CreateLiveProductHandler _createHandler;
     private readonly UpdateProductHandler _updateHandler;
-    private readonly GetLiveProductHandler _getLiveHandler; // Declaramos las variables ----------------
-    private readonly GetArchivedProductHandler _getArchivedHandler; // Declaramos las variables  -------------------
-    private readonly GetProductByIdHandler _getByIdHandler; // Declaramos las variables  -------------------
+    private readonly GetLiveProductHandler _getLiveHandler; // Declaramos las variables 
+    private readonly GetArchivedProductHandler _getArchivedHandler; // Declaramos las variables  
+    private readonly GetProductByIdHandler _getByIdHandler; // Declaramos las variables  
+    private readonly GetAllProductsHandler _getAllHandler; // Declaramos la variable ------------------
     private readonly DeleteProductHandler _deleteHandler;
 
-    // Inyectamos la interfaz del repositorio
-    // Solo los handlers necesarios ------------
+    // Inyectamos la interfaz del repositorio----------------------------
+    // Solo los handlers necesarios 
     public ProductsController(
         CreateLiveProductHandler createHandler,
         UpdateProductHandler updateHandler,
         GetLiveProductHandler getLiveHandler,
         GetArchivedProductHandler getArchivedHandler,
         GetProductByIdHandler getByIdHandler,
+        GetAllProductsHandler getAllHandler,    // -------------------
         DeleteProductHandler deleteHandler)
     {
         _createHandler = createHandler;
@@ -37,6 +40,7 @@ public class ProductsController : ControllerBase
         _getLiveHandler = getLiveHandler;
         _getArchivedHandler = getArchivedHandler;
         _getByIdHandler = getByIdHandler;
+        _getAllHandler = getAllHandler;  // ---------------------
         _deleteHandler = deleteHandler;
     }
 
@@ -75,6 +79,14 @@ public class ProductsController : ControllerBase
         return Ok(await _getByIdHandler.ExecuteAsync(id));
     }
 
+    // GET: api/products
+    // Este metodo se usa para obtener todos los productos -----------------------
+    [HttpGet()]
+    public async Task<ActionResult<IEnumerable<Product>>> GetAllProducts()
+    {
+        return Ok(await _getAllHandler.ExecuteAsync());
+    }
+
     // ---------------------------------------------------------
     // ZONA DE ESCRITURA: Solo Administradores
     // ---------------------------------------------------------
@@ -83,7 +95,7 @@ public class ProductsController : ControllerBase
     // Para cuando haga falta añadir nuevos productos
     [HttpPost]
     [Authorize(Roles = "Admin")] // <-- El Portero para creación
-    public async Task<ActionResult> CreateProduct(CreateLiveProductRequest request) // modificamos el parametro -----------
+    public async Task<ActionResult> CreateProduct(CreateLiveProductRequest request) // modificamos el parametro 
     {
         //await _createHandler.ExecuteAsync(product); (amtes)
 

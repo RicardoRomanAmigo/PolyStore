@@ -9,6 +9,7 @@ using System.Reflection;
 using PolyStore.Application.Features.Products.DeleteProduct;
 using PolyStore.Application.Features.Authentication.Register;
 using PolyStore.Application.Features.Authentication.Login;
+using PolyStore.Application.Features.Products.GetAllProducts;
 
 namespace PolyStore.Application;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<GetLiveProductHandler>();
         services.AddScoped<GetArchivedProductHandler>();
         services.AddScoped<GetProductByIdHandler>();
+        services.AddScoped<GetAllProductsHandler>();
         services.AddScoped<DeleteProductHandler>(); 
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
