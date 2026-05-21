@@ -7,6 +7,7 @@ public class Order
 {
     public Guid Id { get; private set; }
     public Guid? UserId { get; private set; }
+    public User? User { get; private set; } 
     public string CustomerEmail { get; private set; }
     public DateTimeOffset OrderDate { get; private set; }
     public decimal TotalAmout { get; private set; }
