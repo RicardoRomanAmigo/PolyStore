@@ -22,6 +22,9 @@ public static class DependencyInjection
         // Aquí mueves todos los AddScoped de tus repositorios
         services.AddScoped<IProductRepository, ProductRepository>();
 
+        // --- REGISTRO DEL REPOSITORIO DE PEDIDOS ---
+        services.AddScoped<IOrderRepository, OrderRepository>(); // <--------------------------------
+
         return services;
     }
 
