@@ -10,6 +10,7 @@ using PolyStore.Application.Features.Products.DeleteProduct;
 using PolyStore.Application.Features.Authentication.Register;
 using PolyStore.Application.Features.Authentication.Login;
 using PolyStore.Application.Features.Products.GetAllProducts;
+using PolyStore.Application.Features.Orders.CreateOrder;
 
 namespace PolyStore.Application;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<DeleteProductHandler>(); 
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
+        services.AddScoped<CreateOrderHandler>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); 
 
         return services;
