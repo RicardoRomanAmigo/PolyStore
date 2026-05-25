@@ -11,6 +11,7 @@ using PolyStore.Application.Features.Authentication.Register;
 using PolyStore.Application.Features.Authentication.Login;
 using PolyStore.Application.Features.Products.GetAllProducts;
 using PolyStore.Application.Features.Orders.CreateOrder;
+using PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
 
 namespace PolyStore.Application;
 
@@ -28,7 +29,8 @@ public static class DependencyInjection
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
         services.AddScoped<CreateOrderHandler>();
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); 
+        services.AddScoped<UpdateOrderStatusToPaidHandler>();
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); //<-- Evita registrar los validadores uno a uno
 
         return services;
     }
