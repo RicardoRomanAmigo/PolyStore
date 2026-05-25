@@ -22,7 +22,7 @@ public class OrderRepository : IOrderRepository
         // Busca el pedido incluyendo sus líneas Y los productos de cada línea
         return await _context.Orders
             .Include(o => o.OrderItems)        // Carga las líneas del pedido
-                .ThenInclude(oi => oi.Product) // ¡Súper importante! Carga el objeto Producto de cada línea
+            .ThenInclude(oi => oi.Product) // ¡Súper importante! Carga el objeto Producto de cada línea
             .FirstOrDefaultAsync(o => o.Id == id);
     }
 

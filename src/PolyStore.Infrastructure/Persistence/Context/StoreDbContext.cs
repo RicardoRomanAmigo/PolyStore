@@ -5,7 +5,7 @@ namespace PolyStore.Infrastructure.Persistence.Context;
 
 public class StoreDbContext : DbContext
 {
-    public StoreDbContext(DbContextOptions<StoreDbContext> options) : base(options) {}
+    public StoreDbContext(DbContextOptions<StoreDbContext> options) : base(options) { }
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<User> Users => Set<User>();
@@ -51,24 +51,28 @@ public class StoreDbContext : DbContext
         {
             entity.HasKey(o => o.Id);
 
-            //Ignoramos la pripiedad publica de solo lectura
-            entity.Ignore(o => o.OrderItems);
+            // configuramos la navegación indicando cuál es su campo privado de respaldo:
+            entity.HasMany(o => o.OrderItems)
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            //Mapeamos el campo privado '_orderItems' para que EF Core sepa usarlo
-            entity.Metadata.FindNavigation(nameof(Order.OrderItems))?
-                .SetPropertyAccessMode(PropertyAccessMode.Field);
-            
+            // Le decimos a EF Core que acceda a través del campo privado directamente
+            entity.Navigation(o => o.OrderItems)
+                .HasField("_orderItems")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);    
+
             entity.Property(o => o.TotalAmout)
                 .HasColumnType("numeric(18,2)");
-                
+
             entity.Property(o => o.CustomerEmail)
                 .IsRequired()
                 .HasMaxLength(150);
-            
+
             entity.Property(o => o.Status)
                 .IsRequired()
                 .HasMaxLength(30);
-            
+
             // Relacion opcional con User (compra como invitado/registrado)
             entity.HasOne(o => o.User)
                 .WithMany()
@@ -83,12 +87,6 @@ public class StoreDbContext : DbContext
 
             entity.Property(oi => oi.UnitPrice)
                 .HasColumnType("numeric(18,2)");
-
-            //Relacion requira con Order ( si se borra el pedido, mueren sus lineas)
-            entity.HasOne(oi => oi.Order)
-                .WithMany("_orderItems") // Apunta a la lista privada de la cabecera
-                .HasForeignKey(oi => oi.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             // Relación con el Producto
             entity.HasOne(oi => oi.Product)
