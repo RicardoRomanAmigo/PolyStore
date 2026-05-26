@@ -84,6 +84,24 @@ public class Product
             Status = ProductStatus.SoldOut; 
     }
 
+    // - Metodo de dominio para la venta -
+    public void ReduceStock(int quantity)
+    {
+        if(quantity<=0)
+            throw new ArgumentException("Quantity to reduce must be greater than zero");
+        
+        if(Stock < quantity)
+            throw new InvalidOperationException($"Insufficient stock for product '{Name}'. Available: {Stock}, Requested: {quantity}" );
+        
+        Stock -= quantity;
+
+        //Logica automatica de negocio heredada de las reglas
+        if(Stock == 0)
+        {
+            Status = ProductStatus.SoldOut;
+        }
+    }
+
     // - Metodo de dominio para Status Live -
     public void Publish()
     {
