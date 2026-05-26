@@ -39,7 +39,18 @@ public class UpdateOrderStatusToPaidHandler
         // y el ExceptionMiddleware la capturará limpiamente.
         order.CompletePayment();
 
-        // 5. Persistir el cambio de estado en Postgres
+        // 5. Descontamos el stock usando el metodo implementado en la entidad producto ReduceStock
+        foreach(var item in order.OrderItems)
+        {
+            if (item.Product is null)
+            {
+                throw new Exception($"Integrity error: Product with ID {item.ProductId} is not loaded.");
+            }
+            // La entidad reduce el stock y se pone en'SoldOut' si llega a cero automaticamente
+            item.Product.ReduceStock(item.Quantity);
+        }
+
+        // 6. Persistir el cambio de estado en Postgres
         return await _orderRepository.SaveChangesAsync();
     }
 }
