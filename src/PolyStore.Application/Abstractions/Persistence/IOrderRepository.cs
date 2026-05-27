@@ -13,4 +13,7 @@ public interface IOrderRepository
 
     // Calcado a tu IProductRepository
     Task<bool> SaveChangesAsync();
+
+    // Metodo para Obtener Order por userId
+    Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId);
 }

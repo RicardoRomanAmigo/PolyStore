@@ -10,7 +10,7 @@ public class Order
     public User? User { get; private set; } 
     public string CustomerEmail { get; private set; }
     public DateTimeOffset OrderDate { get; private set; }
-    public decimal TotalAmout { get; private set; }
+    public decimal TotalAmount { get; private set; }
     public string Status { get; private set; }
 
     // --- Lineas de pedido encapsuladas ---
@@ -44,7 +44,7 @@ public class Order
             _orderItems.Add(item);
         }    
 
-        TotalAmout = _orderItems.Sum(item => item.Quantity * item.UnitPrice);
+        TotalAmount = _orderItems.Sum(item => item.Quantity * item.UnitPrice);
     }
 
     // Metodos de Dominio

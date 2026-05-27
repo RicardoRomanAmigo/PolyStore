@@ -62,7 +62,7 @@ public class StoreDbContext : DbContext
                 .HasField("_orderItems")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);    
 
-            entity.Property(o => o.TotalAmout)
+            entity.Property(o => o.TotalAmount)
                 .HasColumnType("numeric(18,2)");
 
             entity.Property(o => o.CustomerEmail)
