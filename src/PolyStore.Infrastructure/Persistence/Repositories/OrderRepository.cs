@@ -37,4 +37,13 @@ public class OrderRepository : IOrderRepository
         // Devuelve true si se guardo al menos un cambio
         return await _context.SaveChangesAsync() > 0;
     }
+
+    public async Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId)
+    {
+        return await _context.Orders
+            .Include(o => o.OrderItems) // Cargamos las líneas para poder contar el total de productos
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.OrderDate) // Los más recientes primero
+            .ToListAsync();
+    }
 }
