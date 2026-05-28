@@ -18,7 +18,7 @@ public class GetOrderByIdHandler
     public async Task<OrderDetailResponse?> ExecuteAsync(GetOrderByIdRequest request)
     {
         // 1. Buscamos el pedido en la BD con todos sus includes necesarios
-        var order = await _orderRepository.GetOrderByIdWithItemsAsync(request.OrderId);
+        var order = await _orderRepository.GetOrderByIdAsync(request.OrderId);
 
         if (order is null)
             return null; // El controlador se encargará de escupir un 404 Not Found
