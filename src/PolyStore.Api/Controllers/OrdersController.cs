@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PolyStore.Application.Features.Orders.CreateOrder;
 using PolyStore.Application.Features.Orders.GetOrdersByUserId;
+using PolyStore.Application.Features.Orders.GetOrderById; //  <------------ 
 
 namespace PolyStore.Api.Controllers;
 
@@ -8,13 +9,15 @@ namespace PolyStore.Api.Controllers;
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
-    private readonly CreateOrderHandler _createOrderHanlder;
-    private readonly GetOrdersByUserIdHandler _getOrdersHandler; // <--- Inyectamos el nuevo handler
+    private readonly CreateOrderHandler _createOrderHandler;
+    private readonly GetOrdersByUserIdHandler _getOrdersHandler; 
+    private readonly GetOrderByIdHandler _getOrderByIdHandler; // <--- Inyectamos el nuevo handler
 
-    public OrdersController(CreateOrderHandler createOrderHandler, GetOrdersByUserIdHandler getOrdersHandler)
+    public OrdersController(CreateOrderHandler createOrderHandler, GetOrdersByUserIdHandler getOrdersHandler, GetOrderByIdHandler getOrderByIdHandler)
     {
-        _createOrderHanlder = createOrderHandler;
-        _getOrdersHandler = getOrdersHandler;                       // <--- Lo pasamos por el constructor
+        _createOrderHandler = createOrderHandler;
+        _getOrdersHandler = getOrdersHandler; 
+        _getOrderByIdHandler = getOrderByIdHandler;           // <--- Lo pasamos por el constructor
     }
 
     // 1. Endpoint existente: Crear pedidos
@@ -23,12 +26,12 @@ public class OrdersController : ControllerBase
     {
         // El Handler valida, comprueba stock/precios, crea el pedido y guarda en BD.
         // Mantenemos ExecuteAsync como en los productos
-        var result = await _createOrderHanlder.ExecuteAsync(request);
+        var result = await _createOrderHandler.ExecuteAsync(request);
 
         return Ok(result);
     }
 
-    // 2. NUEVO Endpoint: Historial de pedidos del usuario
+    // 2. Endpoint: Historial de pedidos del usuario
     [HttpGet("user/{userId:guid}")]
     public async Task<ActionResult<IEnumerable<OrderSummaryResponse>>> GetOrdersByUserId([FromRoute] Guid userId)
     {
@@ -39,6 +42,23 @@ public class OrdersController : ControllerBase
         var response = await _getOrdersHandler.ExecuteAsync(request);
 
         // Devolvemos el 200 OK con el listado limpio para el frontend
+        return Ok(response);
+    }
+
+    // 3. NUEVO ENDPOINT: Detalle profundo de un pedido por su ID <-----------------------------------------------------------
+    [HttpGet("{id:guid}")] // La URL será: GET /api/orders/5702257e-...
+    public async Task<IActionResult> GetOrderById([FromRoute] Guid id)
+    {
+        var request = new GetOrderByIdRequest(id);
+        var response = await _getOrderByIdHandler.ExecuteAsync(request);
+
+        //Si el pedido no existe ne la DB devolvemos 404 
+        if(response is null)
+        {
+            return NotFound(new {Message = $"El pedido con ID {id} no fue encontrado." });
+        }
+
+        // Si existe, devolvemos el DTO completo con sus items y nombres de productos
         return Ok(response);
     }
 }
