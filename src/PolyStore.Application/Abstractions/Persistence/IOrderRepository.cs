@@ -16,4 +16,7 @@ public interface IOrderRepository
 
     // Metodo para Obtener Order por userId
     Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId);
+
+    // Metodo para obtener todos los productos de un pedido por id
+    Task<Order?> GetOrderByIdWithItemsAsync(Guid orderId);
 }
