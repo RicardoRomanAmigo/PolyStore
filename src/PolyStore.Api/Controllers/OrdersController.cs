@@ -63,20 +63,9 @@ public class OrdersController : ControllerBase
     [HttpGet("guest/{id:guid}")] // Ruta: GET /api/orders/guest/{id}?email=xxx
     public async Task<IActionResult> GetGuestOrder([FromRoute] Guid id, [FromQuery] string email)
     {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return BadRequest(new { Message = "El correo electronico es obligatorio para validar el acceso."});
-        }
-
         var request = new GetGuestOrderRequest(id, email);
         var response = await _getGuestOrderHandler.ExecuteAsync(request);
-
-        // Si el handler devuelve null (porque el ID no existe o el email no coincide), 404 por seguridad
-        if(response is null)
-        {
-            return NotFound(new { Message = "No se encontro ningun pedido que coincida con los datos proporcionados "});
-        }
-
+        
         return Ok(response);
     }
 }
