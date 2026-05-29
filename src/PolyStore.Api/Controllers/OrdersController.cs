@@ -55,12 +55,6 @@ public class OrdersController : ControllerBase
         var request = new GetOrderByIdRequest(id);
         var response = await _getOrderByIdHandler.ExecuteAsync(request);
 
-        //Si el pedido no existe ne la DB devolvemos 404 
-        if(response is null)
-        {
-            return NotFound(new {Message = $"El pedido con ID {id} no fue encontrado." });
-        }
-
         // Si existe, devolvemos el DTO completo con sus items y nombres de productos
         return Ok(response);
     }
