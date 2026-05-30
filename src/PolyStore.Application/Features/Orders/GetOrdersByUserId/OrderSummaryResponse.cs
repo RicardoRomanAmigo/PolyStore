@@ -5,7 +5,7 @@ namespace PolyStore.Application.Features.Orders.GetOrdersByUserId;
 public record OrderSummaryResponse(
     Guid OrderId,
     DateTimeOffset OrderDate,
-    decimal TotalAmout,
+    decimal TotalAmount, //<----
     string Status,
     int TotalItems
 );
