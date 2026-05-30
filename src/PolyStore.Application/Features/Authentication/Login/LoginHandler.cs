@@ -1,6 +1,7 @@
 using FluentValidation;
 using PolyStore.Application.Abstractions.Authentication;
 using PolyStore.Application.DTOs;
+using PolyStore.Application.Features.Orders.GetOrdersByUserId;
 using PolyStore.Domain.Entities;
 // Alias para evitar ambigüedad con FluentValidation
 using DomainExceptions = PolyStore.Domain.Exceptions;
@@ -56,6 +57,7 @@ public class LoginHandler
         //4. Exito, devolvemos el dto con su token
         return new UserDto
         {
+            UserId = user.Id, //<------
             UserName = user.UserName,
             Email = user.Email,
             Token = _tokenService.CreateToken(user),
