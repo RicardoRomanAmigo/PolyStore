@@ -13,15 +13,18 @@ public class CreateOrderHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
+    private readonly IUserAddressRepository _addressRepository; // //<--- Inyectamos el interface 
     private readonly IValidator<CreateOrderRequest> _validator;
 
     public CreateOrderHandler(
         IOrderRepository orderRepository, 
-        IProductRepository productRepository, 
+        IProductRepository productRepository,
+        IUserAddressRepository addressRepository, //<---
         IValidator<CreateOrderRequest> validator)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
+        _addressRepository = addressRepository; //<---
         _validator = validator;
     }
 
@@ -59,11 +62,26 @@ public class CreateOrderHandler
             domainItems.Add(orderItem);
         }
 
-        var order = new Order(request.UserId, request.CustomerEmail, domainItems);
+        var order = new Order(request.UserId, request.CustomerEmail, domainItems); // <---
+
+        var shippingAddress = new UserAddress(   // <---
+            request.UserId ?? Guid.Empty,
+            request.Address.FullName,
+            request.Address.Dni,
+            request.Address.PhoneNumber,
+            request.Address.Address,
+            request.Address.City,
+            request.Address.PostalCode
+        );
 
         // --- 3. PERSISTENCIA ---
         // Usamos la nomenclatura que encaja con tu estilo (AddOrderAsync)
         await _orderRepository.AddOrderAsync(order);
+
+        // Guardamos la dirección en su tabla correspondiente
+        // Nota: Necesitarás inyectar tu StoreDbContext o un IRepository<UserAddress>
+        // Si no tienes repositorio para UserAddress, lo ideal es usar el DbContext:
+        await _addressRepository.AddAsync(shippingAddress); // <--- Usamos el repositorio, no el contexto
         
         // Confirmación de los cambios
         await _orderRepository.SaveChangesAsync();
