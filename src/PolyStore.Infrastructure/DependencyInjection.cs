@@ -23,7 +23,10 @@ public static class DependencyInjection
         services.AddScoped<IProductRepository, ProductRepository>();
 
         // --- REGISTRO DEL REPOSITORIO DE PEDIDOS ---
-        services.AddScoped<IOrderRepository, OrderRepository>(); // <--------------------------------
+        services.AddScoped<IOrderRepository, OrderRepository>(); 
+        
+        // --- REGISTRO DEL NUEVO REPOSITORIO ---
+        services.AddScoped<IUserAddressRepository, UserAddressRepository>(); // <---
 
         return services;
     }
