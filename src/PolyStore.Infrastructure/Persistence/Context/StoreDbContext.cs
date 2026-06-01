@@ -9,6 +9,7 @@ public class StoreDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserAddress> UserAddresses => Set<UserAddress>(); //<--- Añadimos la direccion
 
     // --- Order DBSets <----------------------------------------------------------------
     public DbSet<Order> Orders => Set<Order>();
@@ -94,5 +95,31 @@ public class StoreDbContext : DbContext
                 .HasForeignKey(oi => oi.ProductId)
                 .OnDelete(DeleteBehavior.Restrict); // Evita borrar un producto si ya está comprado
         });
+
+        // --- Configuracion de UserAddress <----------------------------------------------------------------
+        modelBuilder.Entity<UserAddress>(entity =>
+        {
+            entity.HasKey(ua => ua.Id);
+
+            entity.Property(ua => ua.FullName)
+                .IsRequired().HasMaxLength(150);
+            entity.Property(ua  => ua.Dni)
+                .IsRequired().HasMaxLength(20);
+            entity.Property(ua => ua.PhoneNumber)
+                .IsRequired().HasMaxLength(20);
+            entity.Property(ua => ua.Address)
+                .IsRequired().HasMaxLength(250);
+            entity.Property(ua => ua.City)
+                .IsRequired().HasMaxLength(100);
+            entity.Property(ua => ua.PostalCode)
+                .IsRequired().HasMaxLength(20);
+
+            // Relación: Un usuario puede tener muchas direcciones
+            entity.HasOne<User>()
+                .WithMany() // Si se queire añadir la lista en la clase User, se puede dejar solo con esta condicion
+                .HasForeignKey(ua => ua.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Si se borra al usuario, sus direcciones también
+        });
+
     }
 }
