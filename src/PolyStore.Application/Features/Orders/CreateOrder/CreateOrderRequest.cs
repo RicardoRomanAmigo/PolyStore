@@ -8,6 +8,7 @@ namespace PolyStore.Application.Features.Orders.CreateOrder;
 public record CreateOrderRequest(
     Guid? UserId, 
     string CustomerEmail,
-    List<OrderItemDto> Items
+    List<OrderItemDto> Items,
+    UserAddressDto Address 
 );
 

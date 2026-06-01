@@ -13,7 +13,7 @@ public class UserAddress
     public string PostalCode { get; private set;}
     public bool IsDefault { get; private set;}
 
-    public UserAddress(Guid userId, string fullName, string dni, string phoneNumber, string address, string city, string postalCode, bool isDefault)
+    public UserAddress(Guid userId, string fullName, string dni, string phoneNumber, string address, string city, string postalCode, bool isDefault = true)
     {
         Id = Guid.NewGuid();
         UserId = userId;

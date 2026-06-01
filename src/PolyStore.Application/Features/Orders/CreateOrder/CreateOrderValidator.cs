@@ -23,5 +23,11 @@ public class CreateOrderValidator : AbstractValidator<CreateOrderRequest>
             item.RuleFor(i => i.Quantity)
                 .GreaterThan(0).WithMessage("La cantidad debe ser mayor que cero");
         });
+
+        // 3. NUEVA REGLA: Validar la dirección de envío
+        // Aquí delegamos la validación a la clase UserAddressValidator
+        RuleFor(x => x.Address)
+            .NotNull().WithMessage("Los datos de envío son obligatorios")
+            .SetValidator(new UserAddressValidator());
     }
 }
