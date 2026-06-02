@@ -25,4 +25,14 @@ public class UserAddress
         PostalCode = postalCode;
         IsDefault = isDefault;
     }
+
+    public void Update(string fullName, string dni, string phoneNumber, string address, string city, string postalCode)
+    {
+        FullName = fullName;
+        Dni = dni;
+        PhoneNumber = phoneNumber;
+        Address = address;
+        City = city;
+        PostalCode = postalCode;
+    }
 }
