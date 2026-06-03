@@ -57,10 +57,10 @@ public class LoginHandler
         //4. Exito, devolvemos el dto con su token
         return new UserDto
         {
-            UserId = user.Id, //<------
+            UserId = user.Id, 
             UserName = user.UserName,
             Email = user.Email,
-            FullName = user.FullName,
+            FullName = user.FullName,  //<------
             Token = _tokenService.CreateToken(user),
             Role = user.Role
         };
