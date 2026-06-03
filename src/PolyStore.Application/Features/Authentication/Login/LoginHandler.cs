@@ -60,6 +60,7 @@ public class LoginHandler
             UserId = user.Id, //<------
             UserName = user.UserName,
             Email = user.Email,
+            FullName = user.FullName,
             Token = _tokenService.CreateToken(user),
             Role = user.Role
         };
