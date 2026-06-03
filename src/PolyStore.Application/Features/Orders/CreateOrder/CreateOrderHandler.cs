@@ -13,59 +13,47 @@ public class CreateOrderHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
-    private readonly IUserAddressRepository _addressRepository; // //<--- Inyectamos el interface 
+    private readonly IUserAddressRepository _addressRepository; 
     private readonly IValidator<CreateOrderRequest> _validator;
 
     public CreateOrderHandler(
         IOrderRepository orderRepository, 
         IProductRepository productRepository,
-        IUserAddressRepository addressRepository, //<---
+        IUserAddressRepository addressRepository, 
         IValidator<CreateOrderRequest> validator)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
-        _addressRepository = addressRepository; //<---
+        _addressRepository = addressRepository; 
         _validator = validator;
     }
 
     public async Task<Guid> ExecuteAsync(CreateOrderRequest request)
     {
-        // --- 1. VALIDACIÓN DE DATOS (FluentValidation) ---
         var validationResult = await _validator.ValidateAsync(request);
 
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors
                 .GroupBy(e => e.PropertyName)
-                .ToDictionary(
-                    g => g.Key, 
-                    g => g.Select(x => x.ErrorMessage).ToArray()
-                );
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
 
             throw new PolyStore.Domain.Exceptions.ValidationException(errors);
         }
 
-        // --- 2. LÓGICA DE NEGOCIO ---
         var domainItems = new List<OrderItem>();
-
         foreach (var itemDto in request.Items)
         {
-            // Cambiado a tu método real: GetProductByIdAsync
             var product = await _productRepository.GetProductByIdAsync(itemDto.ProductId);
-            
-            if (product is null)
-            {
-                throw new Exception($"El producto con ID {itemDto.ProductId} no existe."); 
-            }
-
-            var orderItem = new OrderItem(product.Id, itemDto.Quantity, product.Price);
-            domainItems.Add(orderItem);
+            if (product is null) throw new Exception($"El producto con ID {itemDto.ProductId} no existe."); 
+            domainItems.Add(new OrderItem(product.Id, itemDto.Quantity, product.Price));
         }
 
-        var order = new Order(request.UserId, request.CustomerEmail, domainItems); // <---
-
-        var shippingAddress = new UserAddress(   // <---
-            request.UserId ?? Guid.Empty,
+        // 1. Crear el pedido
+        var order = new Order(request.UserId, request.CustomerEmail, domainItems);
+        
+        // 2. Asignar la dirección al pedido (usando el nuevo método en la entidad)
+        order.SetShippingAddress(
             request.Address.FullName,
             request.Address.Dni,
             request.Address.PhoneNumber,
@@ -74,16 +62,25 @@ public class CreateOrderHandler
             request.Address.PostalCode
         );
 
-        // --- 3. PERSISTENCIA ---
-        // Usamos la nomenclatura que encaja con tu estilo (AddOrderAsync)
+        // 3. Persistencia
         await _orderRepository.AddOrderAsync(order);
 
-        // Guardamos la dirección en su tabla correspondiente
-        // Nota: Necesitarás inyectar tu StoreDbContext o un IRepository<UserAddress>
-        // Si no tienes repositorio para UserAddress, lo ideal es usar el DbContext:
-        await _addressRepository.AddAsync(shippingAddress); // <--- Usamos el repositorio, no el contexto
+        // 4. Solo guardamos en la tabla de direcciones de usuario SI el usuario existe
+        if (request.UserId.HasValue) 
+        {
+            var shippingAddress = new UserAddress( 
+                request.UserId.Value,
+                request.Address.FullName,
+                request.Address.Dni,
+                request.Address.PhoneNumber,
+                request.Address.Address,
+                request.Address.City,
+                request.Address.PostalCode
+            );
+
+            await _addressRepository.AddAsync(shippingAddress);
+        }
         
-        // Confirmación de los cambios
         await _orderRepository.SaveChangesAsync();
 
         return order.Id;

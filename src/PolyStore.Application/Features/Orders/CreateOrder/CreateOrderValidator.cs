@@ -28,6 +28,6 @@ public class CreateOrderValidator : AbstractValidator<CreateOrderRequest>
         // Aquí delegamos la validación a la clase UserAddressValidator
         RuleFor(x => x.Address)
             .NotNull().WithMessage("Los datos de envío son obligatorios")
-            .SetValidator(new UserAddressValidator());
+            .SetValidator(new OrderAddressValidator());
     }
 }
