@@ -8,11 +8,12 @@ public class Order
 {
     public Guid Id { get; private set; }
     public Guid? UserId { get; private set; }
-    public User? User { get; private set; } 
+    public User? User { get; private set; }
     public string CustomerEmail { get; private set; }
     public DateTimeOffset OrderDate { get; private set; }
     public decimal TotalAmount { get; private set; }
     public string Status { get; private set; }
+    public DateTimeOffset? ReserveUntil { get; private set; } //<---- Nueva propiedad
 
     // Campos de envío (ahora forman parte del pedido)
     public string FullName { get; private set; } = string.Empty;
@@ -33,10 +34,10 @@ public class Order
 
     public Order(Guid? userId, string customerEmail, IEnumerable<OrderItem> items)
     {
-        if(string.IsNullOrWhiteSpace(customerEmail))
+        if (string.IsNullOrWhiteSpace(customerEmail))
             throw new ArgumentException("Customer email cannot be empty");
 
-        if(items == null || !items.Any())
+        if (items == null || !items.Any())
             throw new ArgumentException("An order must contain at least one item");
 
         Id = Guid.NewGuid();
@@ -44,11 +45,13 @@ public class Order
         CustomerEmail = customerEmail.ToLower().Trim();
         OrderDate = DateTime.UtcNow;
         Status = "Pending";
+        // Implementamos la reserva al generar la orden y establecemos un tiempo <----
+        ReserveUntil = DateTimeOffset.UtcNow.AddMinutes(15);
 
         foreach (var item in items)
         {
             _orderItems.Add(item);
-        }    
+        }
 
         TotalAmount = _orderItems.Sum(item => item.Quantity * item.UnitPrice);
     }
@@ -66,17 +69,29 @@ public class Order
 
     public void CompletePayment()
     {
-        if(Status != "Pending")
+        if (Status != "Pending")
             throw new InvalidOperationException("Only pending orders can be paid");
 
-        Status = "Paid";   
+        // Validar que no haya expirado antes de dejar pagar <---
+        if (ReserveUntil < DateTimeOffset.UtcNow)
+            throw new InvalidOperationException("The order reservation has expired");
+
+        Status = "Paid";
+        ReserveUntil = null; // Ya no hay reserva pendiente <--- 
     }
 
     public void Cancel()
     {
-        if(Status == "Shipped")
+        if (Status == "Shipped")
             throw new InvalidOperationException("Shipped orders cannot be cancelled");
-        
+
         Status = "Cancelled";
+
+        // <--- Aquí es donde aplicamos la lógica de restitución <---
+        foreach (var item in OrderItems)
+        {
+            // El producto sabe qué hacer con este parámetro 'true'
+            item?.Product?.AddStock(item.Quantity, isReturnFromCancellation: true);
+        }
     }
 }

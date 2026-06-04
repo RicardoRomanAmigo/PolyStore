@@ -24,6 +24,7 @@ public class Product
     public DateTime CreatedAt { get; private set; } 
     public DateTime? PublishedAt { get; private set; }
     public string? CreatedBy { get; private set; }
+    public ProductStatus? LastStatus {get; private set; } // <--- Ultimo status antes de soldout
 
     // --- Propiedades de Estilo Dinamico ---
     public string? PrimaryColor { get; private set; } // Ejemplo: "#0f172a"
@@ -97,8 +98,29 @@ public class Product
 
         //Logica automatica de negocio heredada de las reglas
         if(Stock == 0)
-        {
+        {   
+            LastStatus = Status; // <--- Recordamos si era Live o Archived
             Status = ProductStatus.SoldOut;
+        }
+    }
+
+    // - Incremento de stock (Reabastecimiento) -
+    public void AddStock(int quantity, bool isReturnFromCancellation = false) //<--- si el stock vuelve de una cancelacion
+    {
+        if(quantity <= 0)
+        {
+            throw new ArgumentException("Quantity to add must be greater than zero");
+        }
+
+        Stock += quantity;
+
+        //Si estaba agotado lo marcamos como disponible otra vez
+        if(Status == ProductStatus.SoldOut && Stock > 0)
+        {
+            // Si es una cancelación, recuperamos el estado de la "memoria"
+            // Si es una carga manual del admin, quizás prefieras que se quede en su estado actual o se fuerce a Live
+           Status = LastStatus ?? ProductStatus.Live;
+           LastStatus = null; // Limpiamos la memoria
         }
     }
 
