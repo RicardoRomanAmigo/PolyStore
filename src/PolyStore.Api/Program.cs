@@ -4,6 +4,8 @@ using PolyStore.Infrastructure;
 using PolyStore.Application;
 using PolyStore.Api.MiddleWares;
 using FluentValidation;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,14 @@ builder.Services.AddPersistence(builder.Configuration); // Base de Datos - Infra
 builder.Services.AddApplicationHandlers(); // Casos de uso - Application.DependencyInjection
 builder.Services.AddInfrastructureServices(builder.Configuration); // Auth & Context - Infrastructure.DependencyInjection
 builder.Services.AddIdentityServices(builder.Configuration); // El validador de JWT que ya tenía
+// Configuraicion del Hangfire gestor de tareas <---------
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+// Registrar el servidor de procesamiento de Hangfire <--------
+builder.Services.AddHangfireServer();
 
 // --- SERVICIOS BASE ---
 builder.Services.AddControllers(); // Registro de los Controladores
@@ -42,6 +52,9 @@ if (app.Environment.IsDevelopment())
     //Activo la interfaz visual de Scalar
     app.MapScalarApiReference();
 }
+
+// Habilitar el Dashboard de Hangfire <------
+app.UseHangfireDashboard(); // Nota: Por seguridad, en producción se debe proteger esta ruta *****************************************
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend"); // CORS
