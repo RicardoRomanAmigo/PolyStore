@@ -66,5 +66,8 @@ app.UseAuthorization(); // ¿Que puedes hacer?
 // Mapeo de las rutas de los controladores
 app.MapControllers();
 
+//llamada a la extension de HangfireExtensions
+app.ConfigureRecurringJobs();
+
 app.Run();
 
