@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PolyStore.Application.Abstractions.Authentication;
 using PolyStore.Application.Abstractions.Persistence;
+using PolyStore.Application.Abstractions.Services;
 using PolyStore.Infrastructure.Persistence.Context;
 using PolyStore.Infrastructure.Persistence.Repositories;
 using PolyStore.Infrastructure.Services;
@@ -40,6 +41,9 @@ public static class DependencyInjection
         // 2. Registro de herramientas de chequeo de entrada
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
+
+        // 3. Servicios de Negocio / Orquestadores
+        services.AddScoped<IOrderService, OrderService>();
 
         return services;
     }
