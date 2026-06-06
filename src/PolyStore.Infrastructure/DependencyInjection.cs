@@ -45,6 +45,9 @@ public static class DependencyInjection
         // 3. Servicios de Negocio / Orquestadores
         services.AddScoped<IOrderService, OrderService>();
 
+        // 4. Registro servicio de Stripe pago plataforma
+        services.AddScoped<IPaymentService, PaymentService>();
+
         return services;
     }
 }
