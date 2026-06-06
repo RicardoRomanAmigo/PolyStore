@@ -23,7 +23,7 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> HandleWebhook()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-        var signature = Request.Headers["Stripe-Signature"];
+        var signature = Request.Headers["Stripe-Signature"].FirstOrDefault() ?? string.Empty;
 
         // Delegamos la verificación y extracción a tu PaymentService
         var orderId = await _paymentService.GetOrderIdFromWebhookAsync(json, signature);
