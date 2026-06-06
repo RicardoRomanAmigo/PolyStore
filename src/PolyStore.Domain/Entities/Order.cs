@@ -13,7 +13,9 @@ public class Order
     public DateTimeOffset OrderDate { get; private set; }
     public decimal TotalAmount { get; private set; }
     public string Status { get; private set; }
-    public DateTimeOffset? ReserveUntil { get; private set; } //<---- Nueva propiedad
+    public DateTimeOffset? ReserveUntil { get; private set; } 
+    public string? PaymentIntentId { get; private set; } //<---- Nueva propiedad
+    public  DateTimeOffset? PaymentDate { get; private set; } //<---- Nueva propiedad
 
     // Campos de envío (ahora forman parte del pedido)
     public string FullName { get; private set; } = string.Empty;
@@ -45,7 +47,7 @@ public class Order
         CustomerEmail = customerEmail.ToLower().Trim();
         OrderDate = DateTime.UtcNow;
         Status = "Pending";
-        // Implementamos la reserva al generar la orden y establecemos un tiempo <----
+        // Implementamos la reserva al generar la orden y establecemos un tiempo 
         ReserveUntil = DateTimeOffset.UtcNow.AddMinutes(15);
 
         foreach (var item in items)
@@ -67,17 +69,19 @@ public class Order
         PostalCode = postalCode;
     }
 
-    public void CompletePayment()
+    public void CompletePayment(string paymentIntentId) // <--- pasamos en parametro de id del intento de pago
     {
         if (Status != "Pending")
             throw new InvalidOperationException("Only pending orders can be paid");
 
-        // Validar que no haya expirado antes de dejar pagar <---
+        // Validar que no haya expirado antes de dejar pagar 
         if (ReserveUntil < DateTimeOffset.UtcNow)
             throw new InvalidOperationException("The order reservation has expired");
 
+        PaymentIntentId = paymentIntentId; // <--- asignamos el valor a la propiedad
+        PaymentDate = DateTimeOffset.UtcNow; // <--- Registramos cuándo se confirmó
         Status = "Paid";
-        ReserveUntil = null; // Ya no hay reserva pendiente <--- 
+        ReserveUntil = null; // Ya no hay reserva pendiente 
     }
 
     public void Cancel()
@@ -87,7 +91,7 @@ public class Order
 
         Status = "Cancelled";
 
-        // <--- Aquí es donde aplicamos la lógica de restitución <---
+        //  Aquí es donde aplicamos la lógica de restitución 
         foreach (var item in OrderItems)
         {
             // El producto sabe qué hacer con este parámetro 'true'
