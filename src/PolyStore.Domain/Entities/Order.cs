@@ -69,6 +69,12 @@ public class Order
         PostalCode = postalCode;
     }
 
+    public void SetPaymentIntent(string paymentIntentId)
+    {
+        // Opcional: Validar que no se intente sobrescribir un ID existente si ya existe
+        PaymentIntentId = paymentIntentId;
+    }
+
     public void CompletePayment(string paymentIntentId) // <--- pasamos en parametro de id del intento de pago
     {
         if (Status != "Pending")
