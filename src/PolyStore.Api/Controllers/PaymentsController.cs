@@ -12,7 +12,7 @@ public class PaymentsController : ControllerBase
     private readonly UpdateOrderStatusToPaidHandler _updateOrderStatusToPaidHandler;
 
     public PaymentsController(
-        IPaymentService paymentService, 
+        IPaymentService paymentService,
         UpdateOrderStatusToPaidHandler updateOrderStatusToPaidHandler)
     {
         _paymentService = paymentService;
@@ -25,16 +25,16 @@ public class PaymentsController : ControllerBase
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
         var signature = Request.Headers["Stripe-Signature"].FirstOrDefault() ?? string.Empty;
 
-        // Delegamos la verificación y extracción a tu PaymentService
-        var orderId = await _paymentService.GetOrderIdFromWebhookAsync(json, signature);
+        // Recibimos ambos datos desde el servicio
+        var orderData = await _paymentService.GetOrderDataFromWebhookAsync(json, signature);
 
-        if (orderId.HasValue)
+        if (orderData.HasValue)
         {
-            // Ejecutamos tu lógica de negocio
-            await _updateOrderStatusToPaidHandler.ExecuteAsync(new UpdateOrderStatusToPaidRequest(orderId.Value));
+            // Usamos los valores de la tupla (orderData.Value.OrderId, etc.)
+            var request = new UpdateOrderStatusToPaidRequest(orderData.Value.OrderId, orderData.Value.PaymentIntentId);
+            await _updateOrderStatusToPaidHandler.ExecuteAsync(request);
         }
 
-        // Siempre devolvemos 200 OK para que Stripe no reintente el envío
         return Ok();
     }
 }
