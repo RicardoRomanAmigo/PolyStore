@@ -7,4 +7,7 @@ public interface IPaymentService
 
     // Opcional: Verifica el estado real en la pasarela antes de procesar cambios
     Task<bool> IsPaymentCompletedAsync(string paymentIntentId);
+
+    // Añadimos este nuevo método para procesar el webhook
+    Task<Guid?> GetOrderIdFromWebhookAsync(string json, string signature);
 }
