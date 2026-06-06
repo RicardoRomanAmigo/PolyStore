@@ -12,9 +12,9 @@ public class PaymentService : IPaymentService
     {
         // Configuramos la API Key desde appsettings.json
         StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
-        
+
         // Obtenemos el secreto del webhook
-        _webhookSecret = configuration["Stripe:WebhookSecret"] 
+        _webhookSecret = configuration["Stripe:WebhookSecret"]
             ?? throw new ArgumentNullException("Stripe:WebhookSecret no encontrado en configuración");
     }
 
@@ -36,20 +36,18 @@ public class PaymentService : IPaymentService
         return intent.Id;
     }
 
-    public async Task<Guid?> GetOrderIdFromWebhookAsync(string json, string signature)
+    public async Task<(Guid OrderId, string PaymentIntentId)?> GetOrderDataFromWebhookAsync(string json, string signature)
     {
         try
         {
-            // Validamos la firma con el secreto inyectado
             var stripeEvent = EventUtility.ConstructEvent(json, signature, _webhookSecret);
 
-            // Usamos el string literal para evitar errores de resolución del tipo 'Events'
             if (stripeEvent.Type == "payment_intent.succeeded")
             {
                 var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
                 if (paymentIntent != null && paymentIntent.Metadata.ContainsKey("OrderId"))
                 {
-                    return Guid.Parse(paymentIntent.Metadata["OrderId"]);
+                    return (Guid.Parse(paymentIntent.Metadata["OrderId"]), paymentIntent.Id);
                 }
             }
         }
