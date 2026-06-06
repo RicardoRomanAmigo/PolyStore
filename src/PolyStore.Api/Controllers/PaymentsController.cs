@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using PolyStore.Application.Abstractions.Services;
 using PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
-using System.Threading.Tasks;
 
 namespace PolyStore.Api.Controllers;
 
@@ -8,26 +8,33 @@ namespace PolyStore.Api.Controllers;
 [Route("api/[controller]")]
 public class PaymentsController : ControllerBase
 {
+    private readonly IPaymentService _paymentService;
     private readonly UpdateOrderStatusToPaidHandler _updateOrderStatusToPaidHandler;
 
-    public PaymentsController(UpdateOrderStatusToPaidHandler updateOrderStatusToPaidHandler)
+    public PaymentsController(
+        IPaymentService paymentService, 
+        UpdateOrderStatusToPaidHandler updateOrderStatusToPaidHandler)
     {
+        _paymentService = paymentService;
         _updateOrderStatusToPaidHandler = updateOrderStatusToPaidHandler;
     }
 
     [HttpPost("webhook")]
-    public async Task<IActionResult> HandleWebhook([FromBody] UpdateOrderStatusToPaidRequest request)
+    public async Task<IActionResult> HandleWebhook()
     {
-        // El webhook de la pasarela golpea aquí. 
-        // Tu Handler ejecuta la validación, busca el pedido, dispara el método de dominio .CompletePayment()
-        // y guarda los cambios en Postgres.
-        var success = await _updateOrderStatusToPaidHandler.ExecuteAsync(request);
+        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var signature = Request.Headers["Stripe-Signature"];
 
-        if (!success)
+        // Delegamos la verificación y extracción a tu PaymentService
+        var orderId = await _paymentService.GetOrderIdFromWebhookAsync(json, signature);
+
+        if (orderId.HasValue)
         {
-            return BadRequest(new { message = "No se pudo actualizar el estado del pedido." });
+            // Ejecutamos tu lógica de negocio
+            await _updateOrderStatusToPaidHandler.ExecuteAsync(new UpdateOrderStatusToPaidRequest(orderId.Value));
         }
 
-        return Ok(new { message = "Pedido pagado con éxito." });
+        // Siempre devolvemos 200 OK para que Stripe no reintente el envío
+        return Ok();
     }
 }
