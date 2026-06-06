@@ -2,4 +2,4 @@ using System;
 
 namespace PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
 
-public record UpdateOrderStatusToPaidRequest(Guid OrderId);
+public record UpdateOrderStatusToPaidRequest(Guid OrderId, string PaymentIntentId);

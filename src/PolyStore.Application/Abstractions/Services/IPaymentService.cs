@@ -9,5 +9,5 @@ public interface IPaymentService
     Task<bool> IsPaymentCompletedAsync(string paymentIntentId);
 
     // Añadimos este nuevo método para procesar el webhook
-    Task<Guid?> GetOrderIdFromWebhookAsync(string json, string signature);
+    Task<(Guid OrderId, string PaymentIntentId)?> GetOrderDataFromWebhookAsync(string json, string signature);
 }

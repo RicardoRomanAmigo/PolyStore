@@ -37,7 +37,7 @@ public class UpdateOrderStatusToPaidHandler
         // 3 y 4. Ejecutamos el método de dominio de la Entidad
         // Si el estado no es "Pending", la propia entidad lanzará la InvalidOperationException
         // y el ExceptionMiddleware la capturará limpiamente.
-        order.CompletePayment();
+        order.CompletePayment(request.PaymentIntentId);
 
         // 5. Descontamos el stock usando el metodo implementado en la entidad producto ReduceStock
         foreach(var item in order.OrderItems)
