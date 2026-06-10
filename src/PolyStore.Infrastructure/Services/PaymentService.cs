@@ -40,20 +40,29 @@ public class PaymentService : IPaymentService
     {
         try
         {
+            // 1. Construir y validar el evento de Stripe
             var stripeEvent = EventUtility.ConstructEvent(json, signature, _webhookSecret);
 
+            // 2. Filtrar solo los eventos que nos interesan
             if (stripeEvent.Type == "payment_intent.succeeded")
             {
                 var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
-                if (paymentIntent != null && paymentIntent.Metadata.ContainsKey("OrderId"))
+
+                // 3. Validar que el objeto no sea nulo y contenga nuestra referencia
+                if (paymentIntent != null && paymentIntent.Metadata.TryGetValue("OrderId", out var orderIdString))
                 {
-                    return (Guid.Parse(paymentIntent.Metadata["OrderId"]), paymentIntent.Id);
+                    // 4. Retornar la tupla si el parseo del GUID es exitoso
+                    if (Guid.TryParse(orderIdString, out var orderId))
+                    {
+                        return (orderId, paymentIntent.Id);
+                    }
                 }
             }
         }
-        catch (StripeException)
+        catch (StripeException ex)
         {
-            // En un caso real, aquí deberías loguear el error
+            // LOGUEAR EL ERROR AQUÍ: Es vital para detectar intentos de fraude o errores de configuración
+            // _logger.LogError(ex, "Error al procesar el webhook de Stripe");
             return null;
         }
 
