@@ -11,6 +11,9 @@ public interface IOrderRepository
 
     Task<Order?> GetOrderByIdAsync(Guid id);
 
+    // NUEVO: Necesario para que el Webhook localice la orden mediante Stripe
+    Task<Order?> GetByPaymentIntentIdAsync(string paymentIntentId);
+
     // Calcado a tu IProductRepository
     Task<bool> SaveChangesAsync();
 
