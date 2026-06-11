@@ -4,14 +4,16 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PolyStore.Application.DTOs;
 
 namespace PolyStore.Infrastructure.Services;
 
 public class PaymentService : IPaymentService
 {
     private readonly string _webhookSecret;
+    private readonly PaymentIntentService _paymentIntentService;
 
-    public PaymentService(IConfiguration configuration)
+    public PaymentService(IConfiguration configuration, PaymentIntentService paymentIntentService)
     {
         // Configuramos la API Key desde appsettings.json
         StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
@@ -19,6 +21,8 @@ public class PaymentService : IPaymentService
         // Obtenemos el secreto del webhook
         _webhookSecret = configuration["Stripe:WebhookSecret"]
             ?? throw new ArgumentNullException("Stripe:WebhookSecret no encontrado en configuración");
+
+        _paymentIntentService = new PaymentIntentService();
     }
 
     public async Task<string> CreatePaymentIntentAsync(Guid id, decimal amount)
@@ -33,57 +37,56 @@ public class PaymentService : IPaymentService
             }
         };
 
-        var service = new PaymentIntentService();
-        var intent = await service.CreateAsync(options);
+        var intent = await _paymentIntentService.CreateAsync(options);
 
-        return intent.Id;
+        return intent.ClientSecret;
     }
 
-    public async Task<(Guid OrderId, string PaymentIntentId, string Status, string? ErrorMessage)?> GetOrderDataFromWebhookAsync(string json, string signature)
+    public async Task<bool> IsPaymentCompletedAsync(string paymentIntentId)
+    {
+        var intent = await _paymentIntentService.GetAsync(paymentIntentId);
+        return intent.Status == "succeeded";
+    }
+
+    public async Task<PaymentWebhookResult?> GetOrderDataFromWebhookAsync(string json, string signature)
     {
         try
         {
-            // 1. Construir y validar el evento de Stripe
+            // Stripe lanzará una excepción si la firma no es válida
             var stripeEvent = EventUtility.ConstructEvent(json, signature, _webhookSecret);
 
-            // 2. Filtrar los eventos que nos interesan (Éxito o Fallo)
-            if (stripeEvent.Type == "payment_intent.succeeded" || stripeEvent.Type == "payment_intent.payment_failed")
+            // Extraemos el objeto (PaymentIntent)
+            if (stripeEvent.Data.Object is PaymentIntent paymentIntent)
             {
-                var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
-
-                // 3. Validar que el objeto contenga los metadatos de nuestra orden
-                if (paymentIntent != null && paymentIntent.Metadata.TryGetValue("OrderId", out var orderIdString))
+                if (paymentIntent.Metadata.TryGetValue("OrderId", out var orderIdString) &&
+                    Guid.TryParse(orderIdString, out var orderId))
                 {
-                    // 4. Parsear el GUID de la orden
-                    if (Guid.TryParse(orderIdString, out var orderId))
-                    {
-                        // 5. Determinar el estado agnóstico para la capa de Application
-                        string status = stripeEvent.Type == "payment_intent.succeeded" ? "succeeded" : "failed";
-                        
-                        // 6. Extraer el motivo del fallo si Stripe lo proporciona
-                        string? errorMessage = paymentIntent.LastPaymentError?.Message;
-
-                        // Retornamos la tupla de 4 elementos requerida por la interfaz
-                        return (orderId, paymentIntent.Id, status, errorMessage);
-                    }
+                    return new PaymentWebhookResult(
+                        OrderId: orderId,
+                        PaymentIntentId: paymentIntent.Id,
+                        Status: stripeEvent.Type, // Devolvemos el evento crudo: "payment_intent.payment_failed"
+                        ErrorMessage: paymentIntent.LastPaymentError?.Message
+                    );
                 }
             }
         }
         catch (StripeException)
         {
-            // LOGUEAR EL ERROR AQUÍ: Es vital para detectar intentos de fraude o errores de configuración
-            // _logger.LogError(ex, "Error al procesar el webhook de Stripe");
+            // LOGUEAR: Aquí es donde debes registrar que ha llegado una llamada maliciosa 
+            // o un error de configuración de la firma.
+            // _logger.LogError(ex, "Error al validar la firma del Webhook de Stripe");
+
+            // Retornamos null para que el controlador sepa que no hay datos procesables
+            return null;
+        }
+        catch (Exception)
+        {
+            // Capturamos cualquier otro error inesperado (ej: problemas de parsing)
+            // _logger.LogError(ex, "Error inesperado procesando Webhook");
             return null;
         }
 
         return null;
     }
 
-    public async Task<bool> IsPaymentCompletedAsync(string paymentIntentId)
-    {
-        var service = new PaymentIntentService();
-        var intent = await service.GetAsync(paymentIntentId);
-
-        return intent.Status == "succeeded";
-    }
 }

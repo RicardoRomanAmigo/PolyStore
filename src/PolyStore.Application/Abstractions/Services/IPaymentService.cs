@@ -1,3 +1,5 @@
+using PolyStore.Application.DTOs;
+
 namespace PolyStore.Application.Abstractions.Services;
 
 public interface IPaymentService
@@ -8,7 +10,8 @@ public interface IPaymentService
     // Opcional: Verifica el estado real en la pasarela antes de procesar cambios
     Task<bool> IsPaymentCompletedAsync(string paymentIntentId);
 
-    // Antes devolvía: Task<(Guid OrderId, string PaymentIntentId)?>
-    // Ahora le añadimos el Status del evento ("succeeded" o "failed") y el ErrorMessage opcional:
-    Task<(Guid OrderId, string PaymentIntentId, string Status, string? ErrorMessage)?> GetOrderDataFromWebhookAsync(string json, string signature);
+    // Procesamiento de Webhook: recibe los datos crudos, devuelve nuestro DTO
+    // Si la firma es inválida o el pedido no existe, puedes retornar null 
+    // o lanzar una excepción personalizada (ej: InvalidWebhookException)
+    Task<PaymentWebhookResult?> GetOrderDataFromWebhookAsync(string json, string signature);
 }

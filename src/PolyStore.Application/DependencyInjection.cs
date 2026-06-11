@@ -15,6 +15,7 @@ using PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
 using PolyStore.Application.Features.Orders.GetOrdersByUserId;
 using PolyStore.Application.Features.Orders.GetOrderById;
 using PolyStore.Application.Features.Orders.GetGuestOrder;
+using PolyStore.Application.Features.Orders.CancelOrderDueToFailedPayment;
 
 namespace PolyStore.Application;
 
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<GetOrdersByUserIdHandler>();
         services.AddScoped<GetOrderByIdHandler>();
         services.AddScoped<GetGuestOrderHandler>();
+        services.AddScoped<CancelOrderDueToFailedPaymentHandler>();
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly()); //<-- Evita registrar los validadores uno a uno
 
         return services;
