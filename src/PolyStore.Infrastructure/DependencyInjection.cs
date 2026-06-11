@@ -7,6 +7,7 @@ using PolyStore.Application.Abstractions.Services;
 using PolyStore.Infrastructure.Persistence.Context;
 using PolyStore.Infrastructure.Persistence.Repositories;
 using PolyStore.Infrastructure.Services;
+using Stripe;
 
 namespace PolyStore.Infrastructure;
 
@@ -36,7 +37,7 @@ public static class DependencyInjection
     {
         // 1. Registro de authentication (Lógica de negocio de identidad)
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ITokenService, PolyStore.Infrastructure.Services.TokenService>();
 
         // 2. Registro de herramientas de chequeo de entrada
         services.AddHttpContextAccessor();
@@ -45,7 +46,11 @@ public static class DependencyInjection
         // 3. Servicios de Negocio / Orquestadores
         services.AddScoped<IOrderService, OrderService>();
 
-        // 4. Registro servicio de Stripe pago plataforma
+        // 4. Registro servicio de Stripe - AQUÍ ESTÁ LA CORRECCIÓN
+        // Debes registrar los servicios de Stripe que usas dentro de tu PaymentService
+        services.AddScoped<PaymentIntentService>();
+        services.AddScoped<EventService>();
+
         services.AddScoped<IPaymentService, PaymentService>();
 
         return services;
