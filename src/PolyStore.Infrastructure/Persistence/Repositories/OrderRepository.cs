@@ -26,6 +26,15 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == id);
     }
 
+    // =========================================================================
+    // NUEVO MÉTODO: Busca la orden por el identificador de pago de Stripe
+    // =========================================================================
+    public async Task<Order?> GetByPaymentIntentIdAsync(string paymentIntentId)
+    {
+        return await _context.Orders
+            .FirstOrDefaultAsync(o => o.PaymentIntentId == paymentIntentId);
+    }
+
     public async Task AddOrderAsync(Order order)
     {
         // Guarda un pedido nuevo
