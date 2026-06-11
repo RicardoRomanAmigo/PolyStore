@@ -104,4 +104,23 @@ public class Order
             item?.Product?.AddStock(item.Quantity, isReturnFromCancellation: true);
         }
     }
+
+    public void MarkAsFailed()
+    {
+        // 1. Evitamos pisar un pedido que ya fue exitoso o enviado
+        if(Status == "Paid" || Status == "Shipped")
+            throw new InvalidOperationException("Cannot mark as failed an order that is already paid or shipped");
+
+        // 2. Cambiamos el estado (puedes usar "Cancelled" o "PaymentFailed" según prefieras)
+        Status = "PaymentFailed"; 
+        
+        // 3. Liberamos la reserva de tiempo para que no quede en el limbo
+        ReserveUntil = null;
+
+        // 4. Devolvemos el stock inmediatamente igual que en el método Cancel()
+        foreach (var item in OrderItems)
+        {
+            item?.Product?.AddStock(item.Quantity, isReturnFromCancellation: true);
+        } 
+    }
 }
