@@ -1,6 +1,9 @@
 using PolyStore.Application.Abstractions.Services;
 using Stripe;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PolyStore.Infrastructure.Services;
 
@@ -26,7 +29,7 @@ public class PaymentService : IPaymentService
             Currency = "eur",
             Metadata = new Dictionary<string, string>
             {
-                {"OrderId", id.ToString() }
+                { "OrderId", id.ToString() }
             }
         };
 
@@ -36,30 +39,37 @@ public class PaymentService : IPaymentService
         return intent.Id;
     }
 
-    public async Task<(Guid OrderId, string PaymentIntentId)?> GetOrderDataFromWebhookAsync(string json, string signature)
+    public async Task<(Guid OrderId, string PaymentIntentId, string Status, string? ErrorMessage)?> GetOrderDataFromWebhookAsync(string json, string signature)
     {
         try
         {
             // 1. Construir y validar el evento de Stripe
             var stripeEvent = EventUtility.ConstructEvent(json, signature, _webhookSecret);
 
-            // 2. Filtrar solo los eventos que nos interesan
-            if (stripeEvent.Type == "payment_intent.succeeded")
+            // 2. Filtrar los eventos que nos interesan (Éxito o Fallo)
+            if (stripeEvent.Type == "payment_intent.succeeded" || stripeEvent.Type == "payment_intent.payment_failed")
             {
                 var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
 
-                // 3. Validar que el objeto no sea nulo y contenga nuestra referencia
+                // 3. Validar que el objeto contenga los metadatos de nuestra orden
                 if (paymentIntent != null && paymentIntent.Metadata.TryGetValue("OrderId", out var orderIdString))
                 {
-                    // 4. Retornar la tupla si el parseo del GUID es exitoso
+                    // 4. Parsear el GUID de la orden
                     if (Guid.TryParse(orderIdString, out var orderId))
                     {
-                        return (orderId, paymentIntent.Id);
+                        // 5. Determinar el estado agnóstico para la capa de Application
+                        string status = stripeEvent.Type == "payment_intent.succeeded" ? "succeeded" : "failed";
+                        
+                        // 6. Extraer el motivo del fallo si Stripe lo proporciona
+                        string? errorMessage = paymentIntent.LastPaymentError?.Message;
+
+                        // Retornamos la tupla de 4 elementos requerida por la interfaz
+                        return (orderId, paymentIntent.Id, status, errorMessage);
                     }
                 }
             }
         }
-        catch (StripeException ex)
+        catch (StripeException)
         {
             // LOGUEAR EL ERROR AQUÍ: Es vital para detectar intentos de fraude o errores de configuración
             // _logger.LogError(ex, "Error al procesar el webhook de Stripe");
