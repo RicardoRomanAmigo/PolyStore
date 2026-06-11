@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PolyStore.Application.Abstractions.Services;
-using PolyStore.Application.Features.Orders.HandlePaymentFailed;// <--- Namespace de tu nueva Feature
+using PolyStore.Application.Features.Orders.CancelOrderDueToFailedPayment;
 using PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
 
 namespace PolyStore.Api.Controllers;
@@ -11,16 +11,17 @@ public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
     private readonly UpdateOrderStatusToPaidHandler _updateOrderStatusToPaidHandler;
-    private readonly HandlePaymentFailedHandler _handlePaymentFailedHandler; // <--- Nueva dependencia
+    private readonly CancelOrderDueToFailedPaymentHandler _cancelOrderHandler; //<---
+    
 
     public PaymentsController(
         IPaymentService paymentService,
         UpdateOrderStatusToPaidHandler updateOrderStatusToPaidHandler,
-        HandlePaymentFailedHandler handlePaymentFailedHandler)
+        CancelOrderDueToFailedPaymentHandler cancelOrderHandler)  //<---
     {
         _paymentService = paymentService;
         _updateOrderStatusToPaidHandler = updateOrderStatusToPaidHandler;
-        _handlePaymentFailedHandler = handlePaymentFailedHandler;
+        _cancelOrderHandler = cancelOrderHandler;
     }
 
     [HttpPost("webhook")]
@@ -36,26 +37,29 @@ public class PaymentsController : ControllerBase
 
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
 
-        // Recibimos la tupla de 4 valores desde tu servicio actual
+        // Usamos nuestro DTO PaymentWebhookResult en lugar de una tupla
         var orderData = await _paymentService.GetOrderDataFromWebhookAsync(json, signature);
 
-        if (orderData.HasValue)
+        if (orderData != null)
         {
-            switch (orderData.Value.Status.ToLower().Trim())  //<-----
+            switch (orderData.Status)  //<-----
             {
-                case "succeeded":
-                    var paidRequest = new UpdateOrderStatusToPaidRequest(orderData.Value.OrderId, orderData.Value.PaymentIntentId);
+                case "payment_intent.succeeded":
+                    var paidRequest = new UpdateOrderStatusToPaidRequest(orderData.OrderId, orderData.PaymentIntentId);
                     await _updateOrderStatusToPaidHandler.ExecuteAsync(paidRequest);
                     break;
 
-                case "failed":
-                    // Invocamos tu nueva Feature pasando el PaymentIntentId para liberar stock y cancelar reserva
-                    var failedRequest = new HandlePaymentFailedRequest(orderData.Value.PaymentIntentId);
-                    await _handlePaymentFailedHandler.ExecuteAsync(failedRequest);
+                case "payment_intent.payment_failed":
+                    // Invocamos TU Handler, pasando TU Request
+                    var failedRequest = new CancelOrderDueToFailedPaymentRequest(
+                        orderData.OrderId, 
+                        orderData.ErrorMessage
+                    );
+                    await _cancelOrderHandler.ExecuteAsync(failedRequest);
                     break;
 
                 default:
-                    // Ignoramos pacíficamente cualquier otro estado que devuelva la pasarela
+                    // Ignoramos otros estados
                     break;
             }
         }
