@@ -46,7 +46,10 @@ public static class DependencyInjection
         // 3. Servicios de Negocio / Orquestadores
         services.AddScoped<IOrderService, OrderService>();
 
-        // 4. Registro servicio de Stripe - AQUÍ ESTÁ LA CORRECCIÓN
+        // 4. Registro del servicio de email
+        services.AddScoped<IEmailService, EmailService>();
+
+        // 5. Registro servicio de Stripe - AQUÍ ESTÁ LA CORRECCIÓN
         // Debes registrar los servicios de Stripe que usas dentro de tu PaymentService
         services.AddScoped<PaymentIntentService>();
         services.AddScoped<EventService>();
