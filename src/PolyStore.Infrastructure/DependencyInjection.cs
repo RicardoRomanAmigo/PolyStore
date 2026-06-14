@@ -56,6 +56,9 @@ public static class DependencyInjection
 
         services.AddScoped<IPaymentService, PaymentService>();
 
+        // 6. Servicio de colas en segundo plano
+        services.AddScoped<IBackgroundJobService, BackgroundJobService>(); 
+
         return services;
     }
 }
