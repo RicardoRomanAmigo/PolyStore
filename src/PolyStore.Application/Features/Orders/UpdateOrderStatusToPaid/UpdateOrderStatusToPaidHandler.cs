@@ -1,8 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using FluentValidation;
-using Microsoft.Extensions.Logging; // Añadimos logging para dejar rastro en producción <-------------------------------------------------------
+using Microsoft.Extensions.Logging; 
 using PolyStore.Application.Abstractions.Persistence;
+using PolyStore.Application.Abstractions.Services;
 
 namespace PolyStore.Application.Features.Orders.UpdateOrderStatusToPaid;
 
@@ -10,16 +11,19 @@ public class UpdateOrderStatusToPaidHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly UpdateOrderStatusToPaidValidator _validator;
-    private readonly ILogger<UpdateOrderStatusToPaidHandler> _logger; // Recomendado para trazabilidad <----------------------------------------
+    private readonly ILogger<UpdateOrderStatusToPaidHandler> _logger; 
+    private readonly IBackgroundJobService _backgroundJobService; //<------------------
 
     public UpdateOrderStatusToPaidHandler(
         IOrderRepository orderRepository,
         UpdateOrderStatusToPaidValidator validator,
-        ILogger<UpdateOrderStatusToPaidHandler> logger)
+        ILogger<UpdateOrderStatusToPaidHandler> logger,
+        IBackgroundJobService backgroundJobService)
     {
         _orderRepository = orderRepository;
         _validator = validator;
         _logger = logger;
+        _backgroundJobService = backgroundJobService;
     }
 
     public async Task<bool> ExecuteAsync(UpdateOrderStatusToPaidRequest request)
@@ -39,7 +43,7 @@ public class UpdateOrderStatusToPaidHandler
         }
 
         // ---------------------------------------------------------------------
-        // PASO COMPLEMENTARIO: GUARDA DE IDEMPOTENCIA (Short-Circuit)                  <------------------------------------------------------
+        // PASO COMPLEMENTARIO: GUARDA DE IDEMPOTENCIA (Short-Circuit)                  
         // ---------------------------------------------------------------------
         // Evaluamos el estado antes de procesar. (Asumo que tu entidad expone un Status o propiedad equivalente, ej: OrderStatus.Paid o string "Paid")
         // Nota: Ajusta 'order.Status == OrderStatus.Paid' o 'order.IsPaid' según tu modelo real.
@@ -70,6 +74,29 @@ public class UpdateOrderStatusToPaidHandler
         }
 
         // 6. Persistir el cambio de estado en Postgres
-        return await _orderRepository.SaveChangesAsync();
+        var success = await _orderRepository.SaveChangesAsync();
+
+        if (success)
+        {
+            _logger.LogInformation(
+                "Pedido {OrderId} actualizado a 'Paid' con éxito. Encolando email de confirmación.", 
+                order.Id);
+
+            // ---------------------------------------------------------------------
+            // INTEGRACIÓN HANGFIRE (PUNTO 3)
+            // ---------------------------------------------------------------------
+            // Encolamos la tarea pasando la expresión que Hangfire leerá de manera asíncrona.
+            // Nota: Asumo que tu entidad 'order' expone la propiedad del email del cliente (ej. order.CustomerEmail o similar). 
+            // Si la propiedad se llama diferente, ajusta 'order.CustomerEmail' por el campo real.
+            _backgroundJobService.Enqueue(() => 
+                Injected<IEmailService>().SendOrderConfirmationAsync(order.Id, order.CustomerEmail));
+            // ---------------------------------------------------------------------
+        }
+        return success;
     }
+    /// <summary>
+    /// Helper necesario para que Hangfire pueda resolver el servicio desde su contenedor de DI 
+    /// en el momento en que se procese el hilo secundario.
+    /// </summary>
+    private static T Injected<T>() => default!;
 }
