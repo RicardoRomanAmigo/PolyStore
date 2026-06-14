@@ -12,18 +12,21 @@ public class UpdateOrderStatusToPaidHandler
     private readonly IOrderRepository _orderRepository;
     private readonly UpdateOrderStatusToPaidValidator _validator;
     private readonly ILogger<UpdateOrderStatusToPaidHandler> _logger; 
-    private readonly IBackgroundJobService _backgroundJobService; //<------------------
+    private readonly IBackgroundJobService _backgroundJobService; 
+    private readonly IEmailService _emailService; //<------------
 
     public UpdateOrderStatusToPaidHandler(
         IOrderRepository orderRepository,
         UpdateOrderStatusToPaidValidator validator,
         ILogger<UpdateOrderStatusToPaidHandler> logger,
-        IBackgroundJobService backgroundJobService)
+        IBackgroundJobService backgroundJobService,
+        IEmailService emailService)
     {
         _orderRepository = orderRepository;
         _validator = validator;
         _logger = logger;
         _backgroundJobService = backgroundJobService;
+        _emailService = emailService;
     }
 
     public async Task<bool> ExecuteAsync(UpdateOrderStatusToPaidRequest request)
@@ -73,7 +76,7 @@ public class UpdateOrderStatusToPaidHandler
             item.Product.ReduceStock(item.Quantity);
         }
 
-        // 6. Persistir el cambio de estado en Postgres
+        // 6. Persistir el cambio de estado en Postgres 
         var success = await _orderRepository.SaveChangesAsync();
 
         if (success)
@@ -89,7 +92,7 @@ public class UpdateOrderStatusToPaidHandler
             // Nota: Asumo que tu entidad 'order' expone la propiedad del email del cliente (ej. order.CustomerEmail o similar). 
             // Si la propiedad se llama diferente, ajusta 'order.CustomerEmail' por el campo real.
             _backgroundJobService.Enqueue(() => 
-                Injected<IEmailService>().SendOrderConfirmationAsync(order.Id, order.CustomerEmail));
+                _emailService.SendOrderConfirmationAsync(order.Id, order.CustomerEmail)); //<------------------
             // ---------------------------------------------------------------------
         }
         return success;
@@ -98,5 +101,5 @@ public class UpdateOrderStatusToPaidHandler
     /// Helper necesario para que Hangfire pueda resolver el servicio desde su contenedor de DI 
     /// en el momento en que se procese el hilo secundario.
     /// </summary>
-    private static T Injected<T>() => default!;
+    private static T Injected<T>() => default!; //<------------------
 }
