@@ -52,9 +52,11 @@ public class PaymentService : IPaymentService
     {
         try
         {
+            // 1. Construir y validar el evento se Stripe
             // Stripe lanzará una excepción si la firma no es válida
             var stripeEvent = EventUtility.ConstructEvent(json, signature, _webhookSecret);
 
+            //2. Filtrar solo los eventos que nos interesen
             // Extraemos el objeto (PaymentIntent)
             if (stripeEvent.Data.Object is PaymentIntent paymentIntent)
             {
