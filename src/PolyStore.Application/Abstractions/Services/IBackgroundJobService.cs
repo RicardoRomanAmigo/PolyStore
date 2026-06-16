@@ -9,5 +9,7 @@ public interface IBackgroundJobService
     /// <summary>
     /// Encola una tarea para ser ejecutada inmediatamente en segundo plano
     /// <summary>
-    void Enqueue(Expression<Func<Task>> methodCall);
+     
+    // Usamos un genérico <T> para que Hangfire sepa qué servicio debe resolver
+    void Enqueue<T>(Expression<Func<T, Task>> methodCall);
 }

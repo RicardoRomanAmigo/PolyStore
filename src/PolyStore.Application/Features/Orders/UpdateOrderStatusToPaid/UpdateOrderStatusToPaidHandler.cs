@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using FluentValidation;
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Logging;
 using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Application.Abstractions.Services;
 
@@ -11,8 +11,8 @@ public class UpdateOrderStatusToPaidHandler
 {
     private readonly IOrderRepository _orderRepository;
     private readonly UpdateOrderStatusToPaidValidator _validator;
-    private readonly ILogger<UpdateOrderStatusToPaidHandler> _logger; 
-    private readonly IBackgroundJobService _backgroundJobService; 
+    private readonly ILogger<UpdateOrderStatusToPaidHandler> _logger;
+    private readonly IBackgroundJobService _backgroundJobService;
     private readonly IEmailService _emailService; //<------------
 
     public UpdateOrderStatusToPaidHandler(
@@ -31,6 +31,9 @@ public class UpdateOrderStatusToPaidHandler
 
     public async Task<bool> ExecuteAsync(UpdateOrderStatusToPaidRequest request)
     {
+        //***Test Log de error***
+        _logger.LogError(">>> DEBUG: Entrando al Handler con OrderId: {OrderId}", request.OrderId);
+
         // 1. Validar el formato del Request
         var validationResult = await _validator.ValidateAsync(request);
         if (!validationResult.IsValid)
@@ -40,7 +43,7 @@ public class UpdateOrderStatusToPaidHandler
 
         // 2. Buscar el pedido en la base de datos
         var order = await _orderRepository.GetOrderByIdAsync(request.OrderId);
-        if(order is null)
+        if (order is null)
         {
             throw new Exception($"No se encontró ningún pedido con el ID {request.OrderId}.");
         }
@@ -50,14 +53,14 @@ public class UpdateOrderStatusToPaidHandler
         // ---------------------------------------------------------------------
         // Evaluamos el estado antes de procesar. (Asumo que tu entidad expone un Status o propiedad equivalente, ej: OrderStatus.Paid o string "Paid")
         // Nota: Ajusta 'order.Status == OrderStatus.Paid' o 'order.IsPaid' según tu modelo real.
-        if (order.Status == "Paid") 
+        if (order.Status == "Paid")
         {
             _logger.LogInformation(
-                "Idempotencia activada: El pedido {OrderId} ya fue procesado y pagado previamente. Se ignora el reintento del webhook.", 
+                "Idempotencia activada: El pedido {OrderId} ya fue procesado y pagado previamente. Se ignora el reintento del webhook.",
                 request.OrderId);
-                
+
             // Retornamos true para que el controlador devuelva un 200 OK a Stripe y detenga los reintentos.
-            return true; 
+            return true;
         }
         // ---------------------------------------------------------------------
 
@@ -66,7 +69,7 @@ public class UpdateOrderStatusToPaidHandler
         order.CompletePayment(request.PaymentIntentId);
 
         // 5. Descontamos el stock usando el método implementado en la entidad producto ReduceStock
-        foreach(var item in order.OrderItems)
+        foreach (var item in order.OrderItems)
         {
             if (item.Product is null)
             {
@@ -82,7 +85,7 @@ public class UpdateOrderStatusToPaidHandler
         if (success)
         {
             _logger.LogInformation(
-                "Pedido {OrderId} actualizado a 'Paid' con éxito. Encolando email de confirmación.", 
+                "Pedido {OrderId} actualizado a 'Paid' con éxito. Encolando email de confirmación.",
                 order.Id);
 
             // ---------------------------------------------------------------------
@@ -91,8 +94,10 @@ public class UpdateOrderStatusToPaidHandler
             // Encolamos la tarea pasando la expresión que Hangfire leerá de manera asíncrona.
             // Nota: Asumo que tu entidad 'order' expone la propiedad del email del cliente (ej. order.CustomerEmail o similar). 
             // Si la propiedad se llama diferente, ajusta 'order.CustomerEmail' por el campo real.
-            _backgroundJobService.Enqueue(() => 
-                _emailService.SendOrderConfirmationAsync(order.Id, order.CustomerEmail)); //<------------------
+
+            // Hangfire instanciará IEmailService en su propio hilo secundario cuando toque enviar el email.
+            _backgroundJobService.Enqueue<IEmailService>(emailService =>
+                emailService.SendOrderConfirmationAsync(order.Id, order.CustomerEmail));
             // ---------------------------------------------------------------------
         }
         return success;
