@@ -69,7 +69,7 @@ public class Order
         PostalCode = postalCode;
     }
 
-    public void SetPaymentIntent(string paymentIntentId)
+    public void SetPaymentIntent(string paymentIntentId, string clientSecret)
     {
         // Opcional: Validar que no se intente sobrescribir un ID existente si ya existe
         PaymentIntentId = paymentIntentId;
