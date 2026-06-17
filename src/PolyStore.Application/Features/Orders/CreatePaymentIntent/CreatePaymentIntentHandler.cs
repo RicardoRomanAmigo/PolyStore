@@ -1,6 +1,7 @@
 using FluentValidation;
 using PolyStore.Application.Abstractions.Persistence;
 using PolyStore.Application.Abstractions.Services;
+using PolyStore.Application.DTOs; // 1. Namespace donde reside PaymentIntentResult <--------------------
 
 namespace PolyStore.Application.Features.Orders.CreatePaymentIntent;
 
@@ -30,15 +31,16 @@ public class CreatePaymentIntentHandler
         if(order is null)
             throw new Exception($"No ser encontro ningun pedido con el ID {request.Id}.");
 
-        //3. Llamar a la pasarela (Inyectada via interfaz)
-        var paymentIntentId = await _paymentService.CreatePaymentIntentAsync(order.Id, order.TotalAmount);
+        //3. Llamar a la pasarela (Ahora devuelve el DTO con ambas propiedades) <--------------------
+        PaymentIntentResult paymentResult = await _paymentService.CreatePaymentIntentAsync(order.Id, order.TotalAmount);
 
-        //4. Asignar ID de pasarela a la entidad (usando metodo dominio)
-        order.SetPaymentIntent(paymentIntentId);
+        //4. Asignar ID de pasarela y ClientSecret a la entidad (usando método dominio)
+        order.SetPaymentIntent(paymentResult.PaymentIntentId, paymentResult.ClientSecret);
 
         //5. Persistir usando el patron de SaveChangesAsync
         await _orderRepository.SaveChangesAsync();
 
-        return paymentIntentId;
+        // Devolvemos el token que el Frontend necesita para renderizar el formulario seguro
+        return paymentResult.ClientSecret;
     }
 }
