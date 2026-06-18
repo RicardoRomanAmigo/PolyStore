@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using PolyStore.Application.Features.Orders.CreateOrder;
 using PolyStore.Application.Features.Orders.GetOrdersByUserId;
 using PolyStore.Application.Features.Orders.GetOrderById; 
-using PolyStore.Application.Features.Orders.GetGuestOrder; //  <------------ 
+using PolyStore.Application.Features.Orders.GetGuestOrder;
+using PolyStore.Application.Features.Orders.CreatePaymentIntent; //  <------------ 
 
 namespace PolyStore.Api.Controllers;
 
@@ -13,14 +14,20 @@ public class OrdersController : ControllerBase
     private readonly CreateOrderHandler _createOrderHandler;
     private readonly GetOrdersByUserIdHandler _getOrdersHandler; 
     private readonly GetOrderByIdHandler _getOrderByIdHandler; 
-    private readonly GetGuestOrderHandler _getGuestOrderHandler; // <--- Inyectamos el nuevo handler
+    private readonly GetGuestOrderHandler _getGuestOrderHandler; 
+    private readonly CreatePaymentIntentHandler _createPaymentIntentHandler; // <--- Inyectamos el nuevo handler
 
-    public OrdersController(CreateOrderHandler createOrderHandler, GetOrdersByUserIdHandler getOrdersHandler, GetOrderByIdHandler getOrderByIdHandler, GetGuestOrderHandler getGuestOrderHandler)
+    public OrdersController(CreateOrderHandler createOrderHandler,
+        GetOrdersByUserIdHandler getOrdersHandler,
+        GetOrderByIdHandler getOrderByIdHandler,
+        GetGuestOrderHandler getGuestOrderHandler,
+        CreatePaymentIntentHandler createPaymentIntentHandler)
     {
         _createOrderHandler = createOrderHandler;
         _getOrdersHandler = getOrdersHandler; 
         _getOrderByIdHandler = getOrderByIdHandler;           
-        _getGuestOrderHandler = getGuestOrderHandler; // <--- Lo pasamos por el constructor
+        _getGuestOrderHandler = getGuestOrderHandler;
+        _createPaymentIntentHandler = createPaymentIntentHandler; // <--- Lo pasamos por el constructor
     }
 
     // 1. Endpoint existente: Crear pedidos
@@ -59,13 +66,27 @@ public class OrdersController : ControllerBase
         return Ok(response);
     }
 
-    // 4. NUEVO ENDPOINT: Para invitados <-----------------------------------------------------------
+    // 4. Para invitados <-----------------------------------------------------------
     [HttpGet("guest/{id:guid}")] // Ruta: GET /api/orders/guest/{id}?email=xxx
     public async Task<IActionResult> GetGuestOrder([FromRoute] Guid id, [FromQuery] string email)
     {
         var request = new GetGuestOrderRequest(id, email);
         var response = await _getGuestOrderHandler.ExecuteAsync(request);
         
+        return Ok(response);
+    }
+
+    // NUEVO ENDPOINT:  <-----------------------------------------------------------
+    // 5. Generar Intención de Pago (Punto clave para Stripe)
+    [HttpPost("{id:guid}/payment-intent")]
+    public async Task<IActionResult> CreatePaymentIntent([FromRoute] Guid id)
+    {
+        // El request solo necesita el ID del pedido
+        var request = new CreatePaymentIntentRequest(id);
+
+        // El handler llamará a IPaymentService y devolverá el ClientSecret
+        var response = await _createPaymentIntentHandler.ExecuteAsync(request);
+
         return Ok(response);
     }
 }
