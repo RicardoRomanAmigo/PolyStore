@@ -85,8 +85,8 @@ public class OrdersController : ControllerBase
         var request = new CreatePaymentIntentRequest(id);
 
         // El handler llamará a IPaymentService y devolverá el ClientSecret
-        var response = await _createPaymentIntentHandler.ExecuteAsync(request);
+        string clientSecret = await _createPaymentIntentHandler.ExecuteAsync(request);
 
-        return Ok(response);
+        return Ok(new { clientSecret = clientSecret });
     }
 }
